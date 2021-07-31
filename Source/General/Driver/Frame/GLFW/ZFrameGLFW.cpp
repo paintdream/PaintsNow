@@ -1,4 +1,5 @@
 #include "ZFrameGLFW.h"
+#include "../../Render/Vulkan/Core/OGLCompilersDLL/InitializeDll.h"
 #include "../../../../Core/Driver/Profiler/Optick/optick.h"
 
 #define GLFW_STATIC
@@ -118,6 +119,8 @@ ZFrameGLFW::ZFrameGLFW(GLFWwindow** windowPtr, bool vulkan, const Int2& size, IF
 
 	if (isVulkan) {
 		glfwWindowHint(GLFW_CLIENT_API, 0);
+		glslang::InitProcess();
+		glslang::InitThread();
 	}
 
 	window = glfwCreateWindow(size.x(), size.y(), "PaintsNow.Net", NULL, NULL);
@@ -201,12 +204,14 @@ void ZFrameGLFW::EnterMainLoop() {
 	while (!glfwWindowShouldClose(window)) 		{
 		OPTICK_FRAME("MainThread");
 		if (callback != nullptr) {
-			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-			glClearDepth(0.0f);
-			glClearStencil(0);
-			glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-			callback->OnRender();
+			if (!isVulkan) {
+				glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+				glClearDepth(0.0f);
+				glClearStencil(0);
+				glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+			}
 
+			callback->OnRender();
 			OnCustomRender();
 
 			if (!isVulkan) {

@@ -193,6 +193,7 @@ void CameraComponent::Instancing(Engine& engine, TaskData& taskData) {
 		for (TaskData::WarpData::InstanceGroupMap::iterator it = instanceGroup.begin(); it != instanceGroup.end(); ++it) {
 			InstanceGroup& group = (*it).second;
 			if (group.instanceCount == 0) continue;
+
 			RenderPolicy* renderPolicy = group.renderPolicy();
 			std::vector<std::key_value<RenderPolicy*, TaskData::PolicyData> >::iterator ip = std::binary_find(warpData.renderPolicyMap.begin(), warpData.renderPolicyMap.end(), renderPolicy);
 			if (ip == warpData.renderPolicyMap.end()) {
@@ -655,6 +656,7 @@ void CameraComponent::CollectRenderableComponent(Engine& engine, TaskData& taskD
 			std::vector<IRender::Resource*> textureResources;
 			std::vector<IRender::Resource::DrawCallDescription::BufferRange> bufferResources;
 			InstanceGroup& group = instanceGroups[key];
+
 			if (group.instanceCount == 0) {
 				OPTICK_EVENT("New InstanceGroup");
 				std::binary_insert(warpData.dataUpdaters, drawCall.dataUpdater);
@@ -707,6 +709,7 @@ void CameraComponent::CollectRenderableComponent(Engine& engine, TaskData& taskD
 
 				PassBase::Updater& updater = drawCall.shaderResource->GetPassUpdater();
 				std::vector<std::key_value<ShaderResource*, TaskData::WarpData::GlobalBufferItem> >::iterator ig = std::binary_find(warpData.worldGlobalBufferMap.begin(), warpData.worldGlobalBufferMap.end(), drawCall.shaderResource());
+
 				if (ig == warpData.worldGlobalBufferMap.end()) {
 					OPTICK_EVENT("Create GlobalBuffer");
 					ig = std::binary_insert(warpData.worldGlobalBufferMap, drawCall.shaderResource());

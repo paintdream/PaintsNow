@@ -361,7 +361,7 @@ std::vector<String> ZRenderVulkan::EnumerateDevices() {
 	std::vector<String> devices;
 
 	uint32_t gpuCount;
-	VkResult err = vkEnumeratePhysicalDevices(instance, &gpuCount, NULL);
+	VkResult err = vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr);
 	if (err != VK_SUCCESS || gpuCount == 0) {
 		return devices;
 	}
@@ -381,7 +381,7 @@ std::vector<String> ZRenderVulkan::EnumerateDevices() {
 
 IRender::Device* ZRenderVulkan::CreateDevice(const String& description) {
 	uint32_t gpuCount;
-	VkResult err = vkEnumeratePhysicalDevices(instance, &gpuCount, NULL);
+	VkResult err = vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr);
 	if (err != VK_SUCCESS || gpuCount == 0) {
 		return nullptr;
 	}
@@ -397,7 +397,7 @@ IRender::Device* ZRenderVulkan::CreateDevice(const String& description) {
 			VkPhysicalDevice device = gpus[i];
 
 			uint32_t count;
-			vkGetPhysicalDeviceQueueFamilyProperties(device, &count, NULL);
+			vkGetPhysicalDeviceQueueFamilyProperties(device, &count, nullptr);
 			std::vector<VkQueueFamilyProperties> queues(count);
 			if (count == 0) return nullptr;
 
@@ -414,7 +414,7 @@ IRender::Device* ZRenderVulkan::CreateDevice(const String& description) {
 				return nullptr;
 			}
 
-			const char* deviceExtensions[] = { "VK_KHR_swapchain", "VK_NV_glsl_shader" };
+			const char* deviceExtensions[] = { "VK_KHR_swapchain" };
 			int deviceExtensionCount = sizeof(deviceExtensions) / sizeof(deviceExtensions[0]);
 			const float queuePriority[] = { 1.0f };
 
@@ -498,7 +498,7 @@ void ZRenderVulkan::SetDeviceResolution(IRender::Device* dev, const Int2& resolu
 
 	Verify("create swap chain", vkCreateSwapchainKHR(device, &info, allocator, &impl->swapChain));
 	uint32_t imageCount;
-	Verify("get swapchain images", vkGetSwapchainImagesKHR(device, impl->swapChain, &imageCount, NULL));
+	Verify("get swapchain images", vkGetSwapchainImagesKHR(device, impl->swapChain, &imageCount, nullptr));
 
 	// Cleanup old frame data
 	impl->DestroyAllFrames(allocator);
@@ -790,7 +790,7 @@ struct ResourceImplVulkan<IRender::Resource::TextureDescription> final : public 
 			copyBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 			copyBarrier.subresourceRange.levelCount = 1;
 			copyBarrier.subresourceRange.layerCount = 1;
-			vkCmdPipelineBarrier(queue->currentCommandBuffer->buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 0, NULL, 1, &copyBarrier);
+			vkCmdPipelineBarrier(queue->currentCommandBuffer->buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &copyBarrier);
 
 			VkBufferImageCopy region = {};
 			region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -812,7 +812,7 @@ struct ResourceImplVulkan<IRender::Resource::TextureDescription> final : public 
 			useBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 			useBarrier.subresourceRange.levelCount = 1;
 			useBarrier.subresourceRange.layerCount = 1;
-			vkCmdPipelineBarrier(queue->currentCommandBuffer->buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, 1, &useBarrier);
+			vkCmdPipelineBarrier(queue->currentCommandBuffer->buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &useBarrier);
 
 			queue->transientDataBuffers.Push(uploadBuffer);
 			desc.data.Clear();
@@ -2062,14 +2062,14 @@ ZRenderVulkan::ZRenderVulkan(GLFWwindow* win) : allocator(nullptr), window(win) 
 
 	// Get the function pointer (required for any extensions)
 	auto vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
-	assert(vkCreateDebugReportCallbackEXT != NULL);
+	assert(vkCreateDebugReportCallbackEXT != nullptr);
 
 	// Setup the debug report callback
 	VkDebugReportCallbackCreateInfoEXT debugReport = {};
 	debugReport.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
 	debugReport.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
 	debugReport.pfnCallback = DebugReportCallback;
-	debugReport.pUserData = NULL;
+	debugReport.pUserData = nullptr;
 	Verify("create debug report", vkCreateDebugReportCallbackEXT(instance, &debugReport, allocator, (VkDebugReportCallbackEXT*)&debugCallback));
 #else
 	// Create Vulkan Instance without any debug feature
