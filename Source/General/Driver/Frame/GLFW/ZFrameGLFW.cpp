@@ -1,5 +1,5 @@
 #include "ZFrameGLFW.h"
-#include "../../Render/Vulkan/Core/OGLCompilersDLL/InitializeDll.h"
+#include "../../Render/Vulkan/Core/glslang/Public/ShaderLang.h"
 #include "../../../../Core/Driver/Profiler/Optick/optick.h"
 
 #define GLFW_STATIC
@@ -119,8 +119,7 @@ ZFrameGLFW::ZFrameGLFW(GLFWwindow** windowPtr, bool vulkan, const Int2& size, IF
 
 	if (isVulkan) {
 		glfwWindowHint(GLFW_CLIENT_API, 0);
-		glslang::InitProcess();
-		glslang::InitThread();
+		glslang::InitializeProcess();
 	}
 
 	window = glfwCreateWindow(size.x(), size.y(), "PaintsNow.Net", NULL, NULL);
@@ -149,6 +148,10 @@ ZFrameGLFW::ZFrameGLFW(GLFWwindow** windowPtr, bool vulkan, const Int2& size, IF
 }
 
 ZFrameGLFW::~ZFrameGLFW() {
+	if (isVulkan) {
+		glslang::FinalizeProcess();
+	}
+
 	glfwDestroyWindow(window);
 	glfwTerminate();
 }

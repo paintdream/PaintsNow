@@ -659,7 +659,7 @@ static VkFormat TranslateFormat(uint32_t format, uint32_t layout) {
 
 template <>
 struct ResourceImplVulkan<IRender::Resource::TextureDescription> final : public ResourceImplVulkanDesc<IRender::Resource::TextureDescription> {
-	ResourceImplVulkan() : image(VK_NULL_HANDLE), imageView(VK_NULL_HANDLE) {}
+	ResourceImplVulkan() : image(VK_NULL_HANDLE), imageView(VK_NULL_HANDLE), memory(VK_NULL_HANDLE) {}
 	~ResourceImplVulkan() {
 	}
 
@@ -680,6 +680,10 @@ struct ResourceImplVulkan<IRender::Resource::TextureDescription> final : public 
 		if (image != VK_NULL_HANDLE) {
 			vkDestroyImage(device->device, image, device->allocator);
 			image = VK_NULL_HANDLE;
+		}
+
+		if (memory != VK_NULL_HANDLE) {
+			vkFreeMemory(device->device, memory, device->allocator);
 		}
 	}
 
@@ -728,11 +732,11 @@ struct ResourceImplVulkan<IRender::Resource::TextureDescription> final : public 
 			vkGetImageMemoryRequirements(device->device, image, &req);
 
 			VkMemoryAllocateInfo allocInfo;
+			allocInfo.pNext = nullptr;
 			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			allocInfo.allocationSize = req.size;
 			allocInfo.memoryTypeIndex = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-			VkDeviceMemory memory;
 			Verify("allocate texture memory", vkAllocateMemory(device->device, &allocInfo, device->allocator, &memory));
 			Verify("bind image", vkBindImageMemory(device->device, image, memory, 0));
 
@@ -764,19 +768,19 @@ struct ResourceImplVulkan<IRender::Resource::TextureDescription> final : public 
 			allocInfo.allocationSize = req.size;
 			allocInfo.memoryTypeIndex = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 
-			VkDeviceMemory deviceMemory;
-			Verify("allocate memory", vkAllocateMemory(device->device, &allocInfo, device->allocator, &deviceMemory));
-			Verify("bind memory", vkBindBufferMemory(device->device, uploadBuffer, deviceMemory, 0));
+			VkDeviceMemory bufferMemory;
+			Verify("allocate memory", vkAllocateMemory(device->device, &allocInfo, device->allocator, &bufferMemory));
+			Verify("bind memory", vkBindBufferMemory(device->device, uploadBuffer, bufferMemory, 0));
 
 			void* map = nullptr;
-			Verify("map memory", vkMapMemory(device->device, deviceMemory, 0, desc.data.GetSize(), 0, &map));
+			Verify("map memory", vkMapMemory(device->device, bufferMemory, 0, desc.data.GetSize(), 0, &map));
 			memcpy(map, desc.data.GetData(), desc.data.GetSize());
 			VkMappedMemoryRange range = {};
 			range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-			range.memory = deviceMemory;
+			range.memory = bufferMemory;
 			range.size = desc.data.GetSize();
 			Verify("flush memory", vkFlushMappedMemoryRanges(device->device, 1, &range));
-			vkUnmapMemory(device->device, deviceMemory);
+			vkUnmapMemory(device->device, bufferMemory);
 
 			// Copy buffer to image
 			VkImageMemoryBarrier copyBarrier = {};
@@ -816,6 +820,9 @@ struct ResourceImplVulkan<IRender::Resource::TextureDescription> final : public 
 
 			queue->transientDataBuffers.Push(uploadBuffer);
 			desc.data.Clear();
+
+			vkDestroyBuffer(device->device, uploadBuffer, device->allocator);
+			vkFreeMemory(device->device, bufferMemory, device->allocator);
 		}
 	
 		BaseClass::Upload(queue, d);
@@ -823,13 +830,15 @@ struct ResourceImplVulkan<IRender::Resource::TextureDescription> final : public 
 
 	VkImage image;
 	VkImageView imageView;
+	VkDeviceMemory memory;
 };
 
 template <>
 struct ResourceImplVulkan<IRender::Resource::BufferDescription> final : public ResourceImplVulkanDesc<IRender::Resource::BufferDescription> {
-	ResourceImplVulkan() : buffer(VK_NULL_HANDLE) {}
+	ResourceImplVulkan() : buffer(VK_NULL_HANDLE), memory(VK_NULL_HANDLE) {}
 	~ResourceImplVulkan() {
 		assert(buffer == VK_NULL_HANDLE);
+		assert(memory == VK_NULL_HANDLE);
 	}
 
 	const void* GetHandle() const override {
@@ -844,6 +853,10 @@ struct ResourceImplVulkan<IRender::Resource::BufferDescription> final : public R
 		if (buffer != VK_NULL_HANDLE) {
 			vkDestroyBuffer(device->device, buffer, device->allocator);
 			buffer = VK_NULL_HANDLE;
+		}
+
+		if (memory != VK_NULL_HANDLE) {
+			vkFreeMemory(device->device, memory, device->allocator);
 		}
 	}
 
@@ -889,25 +902,25 @@ struct ResourceImplVulkan<IRender::Resource::BufferDescription> final : public R
 		allocInfo.allocationSize = req.size;
 		allocInfo.memoryTypeIndex = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 
-		VkDeviceMemory deviceMemory;
-		Verify("allocate memory", vkAllocateMemory(device->device, &allocInfo, device->allocator, &deviceMemory));
-		Verify("bind memory", vkBindBufferMemory(device->device, buffer, deviceMemory, 0));
+		Verify("allocate memory", vkAllocateMemory(device->device, &allocInfo, device->allocator, &memory));
+		Verify("bind memory", vkBindBufferMemory(device->device, buffer, memory, 0));
 
 		void* map = nullptr;
-		Verify("map memory", vkMapMemory(device->device, deviceMemory, 0, desc.data.GetSize(), 0, &map));
+		Verify("map memory", vkMapMemory(device->device, memory, 0, desc.data.GetSize(), 0, &map));
 		memcpy(map, desc.data.GetData(), desc.data.GetSize());
 		VkMappedMemoryRange range = {};
 		range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-		range.memory = deviceMemory;
+		range.memory = memory;
 		range.size = desc.data.GetSize();
 		Verify("flush memory", vkFlushMappedMemoryRanges(device->device, 1, &range));
-		vkUnmapMemory(device->device, deviceMemory);
+		vkUnmapMemory(device->device, memory);
 
 		desc.data.Clear();
 		BaseClass::Upload(queue, d);
 	}
 
 	VkBuffer buffer;
+	VkDeviceMemory memory;
 };
 
 template <>
@@ -1617,6 +1630,7 @@ struct ResourceImplVulkan<IRender::Resource::ShaderDescription> final : public R
 					binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 					binding.descriptorCount = (uint32_t)declaration.textureBindings.size();
 					binding.stageFlags = stageFlags;
+					binding.binding = (uint32_t)textureBindings.size();
 
 					binding.pImmutableSamplers = reinterpret_cast<VkSampler*>(startSamplerIndex);
 					textureBindings.emplace_back(binding);
@@ -1685,7 +1699,8 @@ struct ResourceImplVulkan<IRender::Resource::ShaderDescription> final : public R
 
 		// Fix sampler pointers
 		for (size_t j = 0; j < textureBindings.size(); j++) {
-			textureBindings[j].pImmutableSamplers = &samplers[*(uint32_t*)&textureBindings[j].pImmutableSamplers];
+			VkDescriptorSetLayoutBinding& binding = textureBindings[j];
+			binding.pImmutableSamplers = &samplers[*(uint32_t*)&textureBindings[j].pImmutableSamplers];
 		}
 
 		uint32_t layoutCount = 0;
