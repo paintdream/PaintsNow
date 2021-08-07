@@ -473,7 +473,7 @@ void SpaceComponent::UpdateBoundingBox(Engine& engine, Float3Pair& box, bool rec
 
 				// block until update finishes
 				kernel.YieldCurrentWarp();
-				kernel.GetThreadPool().PollWait(Flag(), TINY_UPDATING, 0, 5);
+				kernel.GetThreadPool().PollWait(kernel.GetThreadPool().GetCurrentThreadIndex(), Flag(), TINY_UPDATING, 0, 5);
 				kernel.WaitWarp(warp);
 			}
 		} else {

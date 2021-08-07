@@ -39,7 +39,7 @@ void TextureResource::Detach(IRender& render, void* deviceContext) {
 bool TextureResource::UnMap() {
 	if (BaseClass::UnMap()) {
 		ThreadPool& threadPool = resourceManager.GetThreadPool();
-		if (threadPool.PollExchange(critical, 1u) == 0u) {
+		if (threadPool.PollExchange(threadPool.GetCurrentThreadIndex(), critical, 1u) == 0u) {
 			if (mapCount.load(std::memory_order_relaxed) == 0) {
 				description.data.Clear();
 			}
@@ -60,7 +60,7 @@ void TextureResource::Upload(IRender& render, void* deviceContext) {
 	IRender::Queue* queue = reinterpret_cast<IRender::Queue*>(deviceContext);
 	if (Flag().fetch_and(~TINY_MODIFIED) & TINY_MODIFIED) {
 		ThreadPool& threadPool = resourceManager.GetThreadPool();
-		if (threadPool.PollExchange(critical, 1u) == 0u) {
+		if (threadPool.PollExchange(threadPool.GetCurrentThreadIndex(), critical, 1u) == 0u) {
 			deviceMemoryUsage = description.data.GetSize();
 			if (mapCount.load(std::memory_order_relaxed) != 0) {
 				IRender::Resource::TextureDescription desc = description;
@@ -209,7 +209,7 @@ bool TextureResource::Compress(const String& compressionType, bool refreshRuntim
 			// TODO: conflicts with mapped resource
 			assert(mapCount.load(std::memory_order_relaxed) == 0);
 			ThreadPool& threadPool = resourceManager.GetThreadPool();
-			if (threadPool.PollExchange(critical, 1u) == 0u) {
+			if (threadPool.PollExchange(threadPool.GetCurrentThreadIndex(), critical, 1u) == 0u) {
 				description.data.Assign((uint8_t*)target.GetBuffer(), verify_cast<uint32_t>(target.GetTotalLength()));
 				description.state.compress = compress;
 				description.state.layout = IRender::Resource::TextureDescription::RGBA;
@@ -247,7 +247,7 @@ bool TextureResource::LoadExternalResource(Interfaces& interfaces, IStreamBase& 
 	IRender::Resource::TextureDescription::Format dataType = imageBase.GetDataType(image);
 
 	ThreadPool& threadPool = resourceManager.GetThreadPool();
-	if (threadPool.PollExchange(critical, 1u) == 0u) {
+	if (threadPool.PollExchange(threadPool.GetCurrentThreadIndex(), critical, 1u) == 0u) {
 		description.state.layout = layout;
 		description.state.format = dataType;
 		description.dimension.x() = verify_cast<uint16_t>(imageBase.GetWidth(image));

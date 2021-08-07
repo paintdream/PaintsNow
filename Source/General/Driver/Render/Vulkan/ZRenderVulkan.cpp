@@ -431,6 +431,8 @@ IRender::Device* ZRenderVulkan::CreateDevice(const String& description) {
 			createInfo.enabledExtensionCount = deviceExtensionCount;
 			createInfo.ppEnabledExtensionNames = deviceExtensions;
 
+			VkAllocationCallbacks* allocator = nullptr; // TODO: customize allocator
+
 			VkDevice logicDevice;
 			Verify("create device", vkCreateDevice(device, &createInfo, allocator, &logicDevice));
 			VkQueue queue;
@@ -461,6 +463,7 @@ void ZRenderVulkan::SetDeviceResolution(IRender::Device* dev, const Int2& resolu
 	VulkanDeviceImpl* impl = static_cast<VulkanDeviceImpl*>(dev);
 	VkSwapchainKHR oldSwapChain = impl->swapChain;
 	impl->swapChain = VK_NULL_HANDLE;
+	VkAllocationCallbacks* allocator = impl->allocator;
 
 	// reset device swap chain
 	VkDevice device = impl->device;
@@ -555,7 +558,7 @@ IRender::Queue* ZRenderVulkan::CreateQueue(Device* dev, uint32_t flag) {
 	info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	info.queueFamilyIndex = device->queueFamily;
 	VkCommandPool commandPool;
-	vkCreateCommandPool(device->device, &info, allocator, &commandPool);
+	vkCreateCommandPool(device->device, &info, device->allocator, &commandPool);
 
 	return new VulkanQueueImpl(device, commandPool, flag);
 }
@@ -2040,7 +2043,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(VkDebugReportFlagsEXT 
 }
 #endif
 
-ZRenderVulkan::ZRenderVulkan(GLFWwindow* win) : allocator(nullptr), window(win) {
+ZRenderVulkan::ZRenderVulkan(GLFWwindow* win) : window(win) {
 	frameIndex.store(0, std::memory_order_release);
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -2073,6 +2076,7 @@ ZRenderVulkan::ZRenderVulkan(GLFWwindow* win) : allocator(nullptr), window(win) 
 	createInfo.ppEnabledExtensionNames = &extensions_ext[0];
 
 	// Create Vulkan Instance
+	VkAllocationCallbacks* allocator = nullptr; // TODO: customize allocators
 	Verify("create vulkan instance (debug)", vkCreateInstance(&createInfo, allocator, &instance));
 
 	// Get the function pointer (required for any extensions)
@@ -2104,6 +2108,7 @@ const void* ZRenderVulkan::GetResourceDeviceHandle(IRender::Resource* resource) 
 
 ZRenderVulkan::~ZRenderVulkan() {
 #ifdef _DEBUG
+	VkAllocationCallbacks* allocator = nullptr; // TODO: customize allocators
 	PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
 	vkDestroyDebugReportCallbackEXT(instance, (VkDebugReportCallbackEXT)debugCallback, allocator);
 #endif

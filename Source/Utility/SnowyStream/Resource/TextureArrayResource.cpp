@@ -16,7 +16,7 @@ void TextureArrayResource::Upload(IRender& render, void* deviceContext) {
 	IRender::Queue* queue = reinterpret_cast<IRender::Queue*>(deviceContext);
 	if (Flag().fetch_and(~TINY_MODIFIED) & TINY_MODIFIED) {
 		ThreadPool& threadPool = resourceManager.GetThreadPool();
-		if (threadPool.PollExchange(critical, 1u) == 0u) {
+		if (threadPool.PollExchange(threadPool.GetCurrentThreadIndex(), critical, 1u) == 0u) {
 			IRender::Resource::TextureDescription description;
 			description.state = slices[0]->description.state;
 			description.dimension = slices[0]->description.dimension;

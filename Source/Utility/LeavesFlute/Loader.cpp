@@ -394,7 +394,7 @@ void Loader::Run(const CmdLine& cmdLine) {
 
 #if !defined(CMAKE_PAINTSNOW) || (ADD_RENDER_OPENGL && (ADD_FRAME_GLFW && !defined(CMAKE_ANDROID)))
 		// initialize for GLFW
-		if (renderFactory == glFactory) {
+		if (renderFactory.proxy.p == glFactory.proxy.p) {
 			isVulkan = false; // fallback to opengl
 		}
 #endif

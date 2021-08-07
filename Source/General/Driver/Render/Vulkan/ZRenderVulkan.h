@@ -54,7 +54,6 @@ namespace PaintsNow {
 		VkInstance instance;
 		size_t surface;
 		std::atomic<uint32_t> frameIndex;
-		VkAllocationCallbacks* allocator;
 		std::vector<VkPhysicalDevice> gpus;
 
 		#ifdef _DEBUG

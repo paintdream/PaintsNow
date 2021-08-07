@@ -138,7 +138,7 @@ bool ResourceBase::Map() {
 		return ret;
 	} else {
 		ThreadPool& threadPool = resourceManager.GetThreadPool();
-		bool ret = threadPool.PollWait(Flag(), RESOURCE_MAPPED, RESOURCE_MAPPED);
+		bool ret = threadPool.PollWait(threadPool.GetCurrentThreadIndex(), Flag(), RESOURCE_MAPPED, RESOURCE_MAPPED);
 		if (ret) {
 			assert(Flag().load(std::memory_order_acquire) & RESOURCE_MAPPED);
 		} else {

@@ -63,7 +63,7 @@ void MeshResource::Upload(IRender& render, void* deviceContext) {
 	if (Flag().fetch_and(~TINY_MODIFIED) & TINY_MODIFIED) {
 		OPTICK_EVENT();
 		ThreadPool& threadPool = resourceManager.GetThreadPool();
-		if (threadPool.PollExchange(critical, 1u) == 0u) {
+		if (threadPool.PollExchange(threadPool.GetCurrentThreadIndex(), critical, 1u) == 0u) {
 			IRender::Queue* queue = reinterpret_cast<IRender::Queue*>(deviceContext);
 			assert(queue != nullptr);
 
@@ -154,7 +154,7 @@ bool MeshResource::UnMap() {
 	OPTICK_EVENT();
 	if (BaseClass::UnMap()) {
 		ThreadPool& threadPool = resourceManager.GetThreadPool();
-		if (threadPool.PollExchange(critical, 1u) == 0u) {
+		if (threadPool.PollExchange(threadPool.GetCurrentThreadIndex(), critical, 1u) == 0u) {
 			if (mapCount.load(std::memory_order_acquire) == 0) {
 				std::vector<IAsset::MeshGroup> groups;
 				std::swap(groups, meshCollection.groups);

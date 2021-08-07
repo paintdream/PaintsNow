@@ -142,7 +142,7 @@ void CameraComponent::Uninitialize(Engine& engine, Entity* entity) {
 		Kernel& kernel = engine.GetKernel();
 		ThreadPool& threadPool = kernel.GetThreadPool();
 		if (threadPool.GetThreadCount() != 0) {
-			Wait(threadPool, CAMERACOMPONENT_UPDATE_COLLECTING, 0);
+			Wait(threadPool, threadPool.GetCurrentThreadIndex(), CAMERACOMPONENT_UPDATE_COLLECTING, 0);
 		}
 	}
 

@@ -101,8 +101,6 @@ namespace PaintsNow {
 		/// <returns> The cloned object </returns>
 		TShared<SharedTiny> RequestClone(IScript::Request& request, IScript::Delegate<SharedTiny> source);
 
-
-
 	public:
 		ThreadPool threadPool;
 		Kernel kernel;

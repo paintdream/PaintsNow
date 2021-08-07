@@ -143,7 +143,10 @@ ZFrameGLFW::ZFrameGLFW(GLFWwindow** windowPtr, bool vulkan, const Int2& size, IF
 	glfwSetMouseButtonCallback(window, ::OnMouseButtonCallback);
 	glfwSetCursorPosCallback(window, ::OnMouseMoveCallback);
 	glfwSetScrollCallback(window, ::OnScrollCallback);
-	glfwMakeContextCurrent(window);
+
+	if (!isVulkan) {
+		glfwMakeContextCurrent(window);
+	}
 	// glfwSwapInterval(0);
 }
 
