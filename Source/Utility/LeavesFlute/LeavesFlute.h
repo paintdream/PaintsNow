@@ -142,7 +142,7 @@ namespace PaintsNow {
 		void EnableRawPrint(bool rawPrint);
 
 	public:
-		void OnRender() override;
+		bool OnRender() override;
 		void OnWindowSize(const IFrame::EventSize&) override;
 		void OnMouse(const IFrame::EventMouse& mouse) override;
 		void OnKeyboard(const IFrame::EventKeyboard& keyboard) override;

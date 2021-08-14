@@ -407,7 +407,7 @@ namespace PaintsNow {
 		virtual size_t GetProfile(Device* device, const String& feature) = 0;
 		virtual Int2 GetDeviceResolution(Device* device) = 0;
 		virtual void SetDeviceResolution(Device* device, const Int2& resolution) = 0;
-		virtual void NextDeviceFrame(Device* device) = 0;
+		virtual bool NextDeviceFrame(Device* device) = 0;
 		virtual void DeleteDevice(Device* device) = 0;
 
 		// Queue

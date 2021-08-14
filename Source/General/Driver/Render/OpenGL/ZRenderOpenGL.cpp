@@ -1966,7 +1966,7 @@ void ZRenderOpenGL::DeleteDevice(IRender::Device* device) {
 	impl->Release();
 }
 
-void ZRenderOpenGL::NextDeviceFrame(IRender::Device* device) {
+bool ZRenderOpenGL::NextDeviceFrame(IRender::Device* device) {
 	DeviceImplOpenGL* impl = static_cast<DeviceImplOpenGL*>(device);
 	impl->storeInvalidates.clear();
 
@@ -1980,6 +1980,7 @@ void ZRenderOpenGL::NextDeviceFrame(IRender::Device* device) {
 	#endif
 
 	ClearDeletedQueues();
+	return true;
 }
 
 // Queue

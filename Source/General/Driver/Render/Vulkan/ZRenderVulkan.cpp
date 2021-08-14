@@ -499,12 +499,15 @@ void ZRenderVulkan::SetDeviceResolution(IRender::Device* dev, const Int2& resolu
 		info.imageExtent.height = impl->resolution.y() = cap.currentExtent.height;
 	}
 
-	Verify("create swap chain", vkCreateSwapchainKHR(device, &info, allocator, &impl->swapChain));
-	uint32_t imageCount;
-	Verify("get swapchain images", vkGetSwapchainImagesKHR(device, impl->swapChain, &imageCount, nullptr));
+	if (oldSwapChain)
+		vkDestroySwapchainKHR(device, oldSwapChain, allocator);
 
 	// Cleanup old frame data
 	impl->DestroyAllFrames(allocator);
+
+	Verify("create swap chain", vkCreateSwapchainKHR(device, &info, allocator, &impl->swapChain));
+	uint32_t imageCount;
+	Verify("get swapchain images", vkGetSwapchainImagesKHR(device, impl->swapChain, &imageCount, nullptr));
 
 	std::vector<VkImage> images(imageCount);
 	Verify("get swap chain images", vkGetSwapchainImagesKHR(device, impl->swapChain, &imageCount, &images[0]));
@@ -537,8 +540,6 @@ void ZRenderVulkan::SetDeviceResolution(IRender::Device* dev, const Int2& resolu
 		Verify("create semaphore (release)", vkCreateSemaphore(device, &seminfo, allocator, &frameData.releaseSemaphore));
 	}
 
-	if (oldSwapChain)
-		vkDestroySwapchainKHR(device, oldSwapChain, allocator);
 }
 
 Int2 ZRenderVulkan::GetDeviceResolution(IRender::Device* device) {
@@ -546,9 +547,10 @@ Int2 ZRenderVulkan::GetDeviceResolution(IRender::Device* device) {
 	return impl->resolution;
 }
 
-void ZRenderVulkan::NextDeviceFrame(IRender::Device* device) {
+bool ZRenderVulkan::NextDeviceFrame(IRender::Device* device) {
 	VulkanDeviceImpl* impl = static_cast<VulkanDeviceImpl*>(device);
 	impl->NextFrame();
+	return true;
 }
 
 IRender::Queue* ZRenderVulkan::CreateQueue(Device* dev, uint32_t flag) {

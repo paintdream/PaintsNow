@@ -25,7 +25,7 @@ namespace PaintsNow {
 		Device* CreateDevice(const String& description) override;
 		Int2 GetDeviceResolution(Device* device) override;
 		void SetDeviceResolution(Device* device, const Int2& resolution) override;
-		void NextDeviceFrame(Device* device) override;
+		bool NextDeviceFrame(Device* device) override;
 		void DeleteDevice(Device* device) override;
 
 		void SubmitQueues(Queue** queues, uint32_t count, SubmitOption option) override;

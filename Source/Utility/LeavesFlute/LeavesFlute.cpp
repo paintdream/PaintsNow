@@ -409,7 +409,7 @@ void LeavesFlute::OnKeyboard(const IFrame::EventKeyboard& keyboard) {
 	mythForest.OnKeyboard(keyboard);
 }
 
-void LeavesFlute::OnRender() {
+bool LeavesFlute::OnRender() {
 	OPTICK_CATEGORY("Render", Optick::Category::Rendering);
 
 	bool titleChanged = false;
@@ -429,7 +429,7 @@ void LeavesFlute::OnRender() {
 		modules[i]->TickDevice(interfaces.render);
 	}
 
-	interfaces.render.NextDeviceFrame(snowyStream.GetRenderResourceManager()->GetRenderDevice());
+	return interfaces.render.NextDeviceFrame(snowyStream.GetRenderResourceManager()->GetRenderDevice());
 }
 
 class ExpandParamsScriptTask : public WarpTiny, public TaskRepeat {

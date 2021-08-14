@@ -72,7 +72,7 @@ public:
 	}
 	Int2 GetDeviceResolution(Device* device) override { return Int2(640, 480); }
 	void SetDeviceResolution(Device* device, const Int2& resolution) override {}
-	void NextDeviceFrame(Device* device) override {}
+	bool NextDeviceFrame(Device* device) override { return true; }
 	void DeleteDevice(Device* device) override {}
 
 	// Queue

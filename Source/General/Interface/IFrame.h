@@ -123,7 +123,7 @@ namespace PaintsNow {
 			virtual void OnMouse(const EventMouse& mouse) = 0;
 			virtual void OnKeyboard(const EventKeyboard& keyboard) = 0;
 			virtual void OnWindowSize(const EventSize& newSize) = 0;
-			virtual void OnRender() = 0;
+			virtual bool OnRender() = 0;
 		};
 
 		~IFrame() override;

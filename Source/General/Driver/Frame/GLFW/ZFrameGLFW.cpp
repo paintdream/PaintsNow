@@ -1,6 +1,10 @@
 #include "ZFrameGLFW.h"
-#include "../../Render/Vulkan/Core/glslang/Public/ShaderLang.h"
 #include "../../../../Core/Driver/Profiler/Optick/optick.h"
+
+#if (!defined(CMAKE_PAINTSNOW) || ADD_RENDER_VULKAN) && (!defined(_MSC_VER) || _MSC_VER > 1200)
+#define GLFW_INCLUDE_VULKAN
+#include "../../Render/Vulkan/Core/glslang/Public/ShaderLang.h"
+#endif
 
 #define GLFW_STATIC
 #define GLEW_STATIC
@@ -8,9 +12,6 @@
 #undef GLFW_LIB_PRAGMAS
 #endif
 
-#if (!defined(CMAKE_PAINTSNOW) || ADD_RENDER_VULKAN) && (!defined(_MSC_VER) || _MSC_VER > 1200)
-#define GLFW_INCLUDE_VULKAN
-#endif
 
 #include "../../Render/OpenGL/Core/glew.h"
 #include "Core/include/GLFW/glfw3.h"
@@ -119,7 +120,9 @@ ZFrameGLFW::ZFrameGLFW(GLFWwindow** windowPtr, bool vulkan, const Int2& size, IF
 
 	if (isVulkan) {
 		glfwWindowHint(GLFW_CLIENT_API, 0);
+#ifdef GLFW_INCLUDE_VULKAN
 		glslang::InitializeProcess();
+#endif
 	}
 
 	window = glfwCreateWindow(size.x(), size.y(), "PaintsNow.Net", NULL, NULL);
@@ -127,13 +130,12 @@ ZFrameGLFW::ZFrameGLFW(GLFWwindow** windowPtr, bool vulkan, const Int2& size, IF
 		*windowPtr = window;
 	}
 
-	/*
 	if (isVulkan) {
 		if (!glfwVulkanSupported()) {
 			fprintf(stderr, "Vulkan not supported.");
 			exit(0);
 		}
-	}*/
+	}
 
 	glfwSetWindowUserPointer(window, this);
 	OnWindowSize(size);
@@ -151,9 +153,11 @@ ZFrameGLFW::ZFrameGLFW(GLFWwindow** windowPtr, bool vulkan, const Int2& size, IF
 }
 
 ZFrameGLFW::~ZFrameGLFW() {
+#ifdef GLFW_INCLUDE_VULKAN
 	if (isVulkan) {
 		glslang::FinalizeProcess();
 	}
+#endif
 
 	glfwDestroyWindow(window);
 	glfwTerminate();
@@ -210,6 +214,10 @@ void ZFrameGLFW::EnterMainLoop() {
 	while (!glfwWindowShouldClose(window)) 		{
 		OPTICK_FRAME("MainThread");
 		if (callback != nullptr) {
+			if (isVulkan) {
+				continue;
+			}
+
 			if (!isVulkan) {
 				glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 				glClearDepth(0.0f);
@@ -217,8 +225,9 @@ void ZFrameGLFW::EnterMainLoop() {
 				glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 			}
 
-			callback->OnRender();
-			OnCustomRender();
+			if (callback->OnRender()) {
+				OnCustomRender();
+			}
 
 			if (!isVulkan) {
 				glfwSwapBuffers(window);
