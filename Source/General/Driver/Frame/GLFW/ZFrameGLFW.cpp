@@ -214,10 +214,6 @@ void ZFrameGLFW::EnterMainLoop() {
 	while (!glfwWindowShouldClose(window)) 		{
 		OPTICK_FRAME("MainThread");
 		if (callback != nullptr) {
-			if (isVulkan) {
-				continue;
-			}
-
 			if (!isVulkan) {
 				glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 				glClearDepth(0.0f);

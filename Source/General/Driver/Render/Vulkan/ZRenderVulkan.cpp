@@ -105,7 +105,7 @@ struct VulkanDeviceImpl final : public IRender::Device {
 
 			vkDestroySemaphore(device, frameData.acquireSemaphore, allocator);
 			vkDestroySemaphore(device, frameData.releaseSemaphore, allocator);
-			vkDestroyImage(device, frameData.backBufferImage, allocator);
+			// vkDestroyImage(device, frameData.backBufferImage, allocator); // backBufferImage is auto-released in destroying swap chain
 			vkDestroyImageView(device, frameData.backBufferView, allocator);
 			vkDestroyFence(device, frameData.fence, allocator);
 		}
@@ -1000,6 +1000,10 @@ struct ResourceImplVulkan<IRender::Resource::EventDescription> final : public Re
 		}
 	}
 
+	Resource::Type GetResourceType() override {
+		return RESOURCE_EVENT;
+	}
+
 	void Download(VulkanQueueImpl* queue, IRender::Resource::Description* d) override {
 		EventDescription* ed = static_cast<EventDescription*>(d);
 		if (ed->setState) {
@@ -1769,6 +1773,8 @@ IRender::Resource* ZRenderVulkan::CreateResource(Device* device, Resource::Type 
 		return new ResourceImplVulkan<Resource::RenderTargetDescription>();
 	case Resource::RESOURCE_DRAWCALL:
 		return new ResourceImplVulkan<Resource::DrawCallDescription>();
+	case Resource::RESOURCE_EVENT:
+		return new ResourceImplVulkan<Resource::EventDescription>();
 	}
 
 	assert(false);
