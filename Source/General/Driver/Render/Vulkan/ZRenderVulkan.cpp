@@ -171,7 +171,7 @@ std::pair<Node*, VkDescriptorSet> DescriptorSetAllocator::AllocateDescriptorSet(
 	}
 
 	VkDescriptorSet descriptorSet;
-	VkDescriptorSetAllocateInfo descriptorSetAllocateInfo;
+	VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
 	descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	descriptorSetAllocateInfo.descriptorPool = p->pool;
 	descriptorSetAllocateInfo.descriptorSetCount = 1;
@@ -1482,6 +1482,7 @@ struct ResourceImplVulkan<IRender::Resource::ShaderDescription> final : public R
 			blendState.alphaBlendOp = VK_BLEND_OP_ADD;
 			blendState.colorWriteMask = renderState.colorWrite ? VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT : 0;
 		}
+
 		std::vector<VkPipelineColorBlendAttachmentState> blendStates(blendInfo.attachmentCount, blendState);
 		blendInfo.pAttachments = &blendStates[0];
 
@@ -1859,7 +1860,7 @@ void ZRenderVulkan::DeleteResource(Queue* queue, Resource* resource) {
 	impl->UnLock();
 }
 
-inline VkBuffer GetBuffer(IRender::Resource::DrawCallDescription::BufferRange& range) {
+static inline VkBuffer GetBuffer(IRender::Resource::DrawCallDescription::BufferRange& range) {
 	ResourceImplVulkan<IRender::Resource::BufferDescription>* bufferResource = static_cast<ResourceImplVulkan<IRender::Resource::BufferDescription>*>(range.buffer);
 	return bufferResource->buffer;
 }
@@ -1869,7 +1870,7 @@ void ResourceImplVulkan<IRender::Resource::DrawCallDescription>::Upload(VulkanQu
 	IRender::Resource::DrawCallDescription* description = static_cast<IRender::Resource::DrawCallDescription*>(d);
 	signature.Resize(description->bufferResources.size() * 3);
 	uint8_t* data = signature.GetData();
-	ResourceImplVulkan<IRender::Resource::ShaderDescription>* shader = static_cast<ResourceImplVulkan<IRender::Resource::ShaderDescription>*>(cacheDescription.shaderResource);
+	ResourceImplVulkan<IRender::Resource::ShaderDescription>* shader = static_cast<ResourceImplVulkan<IRender::Resource::ShaderDescription>*>(description->shaderResource);
 
 	VulkanDeviceImpl* device = queue->device;
 	if (descriptorSetTexture.second == VK_NULL_HANDLE && shader->descriptorSetLayoutTexture != VK_NULL_HANDLE) {

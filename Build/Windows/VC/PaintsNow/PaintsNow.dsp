@@ -516,6 +516,14 @@ SOURCE=..\..\..\..\Source\General\Misc\PreConstExpr.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\Source\General\Misc\RemoteCall.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\Source\General\Misc\RemoteCall.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\Source\General\Misc\RemoteProxy.cpp
 # End Source File
 # Begin Source File
