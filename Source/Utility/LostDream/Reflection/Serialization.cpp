@@ -7,7 +7,7 @@
 
 using namespace PaintsNow;
 
-struct EmptyType : public TReflected<EmptyType, IReflectObjectComplex, MetaConstructable> {
+struct EmptyType : public TReflected<EmptyType, IReflectObjectComplex, MetaConstructable, MetaCloneable> {
 	virtual TObject<IReflect>& operator () (IReflect& reflect) {
 		BaseClass::operator () (reflect);
 		if (reflect.IsReflectProperty()) {
