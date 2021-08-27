@@ -494,7 +494,7 @@ void CameraComponent::OnTickCameraViewPort(Engine& engine, RenderPort& renderPor
 		Flag().fetch_and(~CAMERACOMPONENT_UPDATE_COLLECTED, std::memory_order_relaxed);
 		Flag().fetch_or(CAMERACOMPONENT_UPDATE_COMMITTED, std::memory_order_acq_rel);
 	} else {
-	taskData = prevTaskData;
+		taskData = prevTaskData;
 	}
 
 	// Update jitter
@@ -856,11 +856,11 @@ void CameraComponent::CompleteCollect(Engine& engine, TaskData& taskData) {
 	OPTICK_EVENT();
 
 	Kernel& kernel = engine.GetKernel();
-	Flag().fetch_and(~CAMERACOMPONENT_UPDATE_COLLECTING, std::memory_order_release);
 
 	if (kernel.GetCurrentWarpIndex() != GetWarpIndex()) {
 		kernel.QueueRoutine(this, CreateTaskContextFree(Wrap(this, &CameraComponent::CompleteCollect), std::ref(engine), std::ref(taskData)));
 	} else {
+		Flag().fetch_and(~CAMERACOMPONENT_UPDATE_COLLECTING, std::memory_order_release);
 		if (nextTaskData->Flag().load(std::memory_order_relaxed) & TINY_ACTIVATED) {
 			Instancing(engine, taskData);
 		}

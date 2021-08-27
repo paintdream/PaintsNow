@@ -2043,8 +2043,10 @@ void ZRenderOpenGL::DeleteQueue(Queue* queue) {
 	QueueImplOpenGL* q = static_cast<QueueImplOpenGL*>(queue);
 	assert(q->next == nullptr);
 
-	q->next = (QueueImplOpenGL*)deletedQueueHead.load(std::memory_order_acquire);
-	while (!deletedQueueHead.compare_exchange_weak((Queue*&)q->next, q, std::memory_order_release)) {}
+	QueueImplOpenGL* r = (QueueImplOpenGL*)deletedQueueHead.load(std::memory_order_relaxed);
+	do {
+		q->next = r;
+	} while (!deletedQueueHead.compare_exchange_weak((Queue*&)r, q, std::memory_order_release, std::memory_order_relaxed));
 }
 
 ResourceBaseImplOpenGL* DrawCallPool::allocate(size_t n) {

@@ -2071,6 +2071,9 @@ ZRenderVulkan::ZRenderVulkan(GLFWwindow* win) : window(win) {
 	createInfo.enabledExtensionCount = extensionsCount;
 	createInfo.ppEnabledExtensionNames = extensions;
 
+	// Create Vulkan Instance
+	VkAllocationCallbacks* allocator = nullptr; // TODO: customize allocators
+
 #ifdef _DEBUG 
 	// Enabling multiple validation layers grouped as LunarG standard validation
 	const char* layers[] = { "VK_LAYER_LUNARG_standard_validation" };
@@ -2084,8 +2087,6 @@ ZRenderVulkan::ZRenderVulkan(GLFWwindow* win) : window(win) {
 	createInfo.enabledExtensionCount = extensionsCount + 1;
 	createInfo.ppEnabledExtensionNames = &extensions_ext[0];
 
-	// Create Vulkan Instance
-	VkAllocationCallbacks* allocator = nullptr; // TODO: customize allocators
 	Verify("create vulkan instance (debug)", vkCreateInstance(&createInfo, allocator, &instance));
 
 	// Get the function pointer (required for any extensions)

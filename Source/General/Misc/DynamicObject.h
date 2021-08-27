@@ -8,7 +8,7 @@
 
 namespace PaintsNow {
 	class DynamicObject;
-	class DynamicInfo : public UniqueInfo {
+	class_aligned(CPU_CACHELINE_SIZE) DynamicInfo : public UniqueInfo {
 	public:
 		struct MemController {
 			void (*Creator)(void*);
