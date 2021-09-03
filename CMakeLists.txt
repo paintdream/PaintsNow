@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED (VERSION 2.8)
 OPTION (CMAKE_WARN_VS6 "Allow compilation under Visual C++ 6.0" OFF)
-OPTION (STATIC_VC_RUNTIME "Use dynamic VC runtime" ON)
+OPTION (STATIC_VC_RUNTIME "Use static VC runtime" ON)
 
 IF (NOT WIN32)
   	find_program(CLANG-TIDY-EXE "/usr/bin/clang-tidy")

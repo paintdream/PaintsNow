@@ -67,7 +67,12 @@ TObject<IReflect>& RemoteComponent::operator () (IReflect& reflect) {
 }
 
 struct RoutineWrapper {
-	RoutineWrapper(const TShared<RemoteRoutine>& r) : routine(std::move(r)) {}
+#if defined(_MSC_VER) && _MSC_VER <= 1200
+	RoutineWrapper(rvalue<TShared<RemoteRoutine> > r) : routine(r) {}
+#else
+	RoutineWrapper(rvalue<TShared<RemoteRoutine> > r) : routine(std::move(r)) {}
+#endif
+
 	~RoutineWrapper() {}
 	void operator () (IScript::Request& request, IScript::Request::Arguments& args) {
 		// always use sync call
@@ -163,7 +168,7 @@ static void CopyVariable(uint32_t flag, IScript::Request& request, IScript::Requ
 			TShared<RemoteRoutine> remoteRoutine = TShared<RemoteRoutine>::From(new RemoteRoutine(fromRequest.GetRequestPool(), ref));
 			if (flag & RemoteComponent::REMOTECOMPONENT_TRANSPARENT) {
 				// create wrapper
-				RoutineWrapper routineWrapper(remoteRoutine);
+				RoutineWrapper routineWrapper(std::move(remoteRoutine));
 				request << request.Adapt(WrapClosure(std::move(routineWrapper), &RoutineWrapper::operator ()));
 			} else {
 				request << remoteRoutine;
@@ -182,7 +187,8 @@ static void CopyVariable(uint32_t flag, IScript::Request& request, IScript::Requ
 					if (&routine->pool->GetScript() == request.GetScript()) {
 						request << routine->ref;
 					} else {
-						RoutineWrapper routineWrapper(routine);
+						TShared<RemoteRoutine> r(routine);
+						RoutineWrapper routineWrapper(std::move(r));
 						request << request.Adapt(WrapClosure(std::move(routineWrapper), &RoutineWrapper::operator ()));
 					}
 				} else {
