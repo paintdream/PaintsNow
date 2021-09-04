@@ -7,8 +7,9 @@ using namespace PaintsNow;
 struct InspectCustomStructure : public IReflect {
 	InspectCustomStructure(IScript::Request& r, IReflectObject& obj) : request(r), IReflect(true, false) {
 		request << begintable;
-		String name, count;
-		InspectCustomStructure::FilterType(obj.GetUnique()->GetName(), name, count);
+		String name;
+		int count1, count2;
+		InspectCustomStructure::FilterType(obj.GetUnique()->GetName(), name, count1, count2);
 
 		request << key("Type") << name;
 		request << key("Optional") << false;
@@ -34,7 +35,7 @@ struct InspectCustomStructure : public IReflect {
 
 	void Method(const char* name, const TProxy<>* p, const Param& retValue, const std::vector<Param>& params, const MetaChainBase* meta) override {}
 
-	static bool FilterType(const String& name, String& ret, String& count) {
+	static bool FilterType(const String& name, String& ret, int& count1, int& count2) {
 		// parse name
 		if (name == UniqueType<String>::Get()->GetName() || name == UniqueType<StringView>::Get()->GetName() || name == UniqueType<Bytes>::Get()->GetName()) {
 			ret = "string";
@@ -57,18 +58,16 @@ struct InspectCustomStructure : public IReflect {
 			}
 		}
 
-		static const String typePrefix = "TType";
-		String::size_type pos = name.find(typePrefix);
-		String::size_type end = pos;
+		String::size_type pos = name.find("TMatrix");
 		if (pos != String::npos) {
-			pos += typePrefix.length();
-			end += typePrefix.length();
-			while (end < name.length() && isdigit(name[end])) end++;
-		}
-
-		count = "";
-		if (end != String::npos) {
-			count = name.substr(pos, end - pos);
+			char sz[256] = "";
+			sscanf(name.c_str() + pos, "TMatrix<%[a-z],%d,%d>", sz, &count1, &count2);
+			ret = sz;
+		} else {
+			pos = name.find("TType");
+			if (pos != String::npos) {
+				sscanf(name.c_str() + pos, "TType%d<", &count1);
+			}
 		}
 
 		return true;
@@ -79,8 +78,9 @@ struct InspectCustomStructure : public IReflect {
 		String typeName = type->GetName();
 
 		bool isDelegate = typeName.find("PaintsNow::BaseDelegate") != 0 || typeName.find("PaintsNow::Delegate<") != 0;
-		String name, count;
-		bool subfield = InspectCustomStructure::FilterType(typeName, name, count);
+		String name;
+		int count1 = 0, count2 = 0;
+		bool subfield = InspectCustomStructure::FilterType(typeName, name, count1, count2);
 
 		if (type->IsCreatable()) {
 			IReflectObject* obj = type->Create();
@@ -100,19 +100,36 @@ struct InspectCustomStructure : public IReflect {
 		} else {
 			request << begintable;
 			request << key("Optional") << (isDelegate && optional);
-			request << key("Pointer") << count.empty();
+			request << key("Pointer") << (count1 == 0);
 			request << key("List") << isIterator;
 			request << key("Fields") << beginarray;
 
+			char sz[256] = "";
+
 			if (subfield) {
-				int c = atoi(count.c_str());
-				for (int i = 0; i < c; i++) {
-					request << name;
+				if (count2 == 0) {
+					for (int i = 0; i < count1; i++) {
+						request << name;
+					}
+
+					if (count1 != 0) {
+						sprintf(sz, "%d", count1);
+					}
+				} else {
+					for (int i = 0; i < count1; i++) {
+						for (int j = 0; j < count2; j++) {
+							request << name;
+						}
+					}
+
+					if (count1 != 0) {
+						sprintf(sz, "%dx%d", count1, count2);
+					}
 				}
 			}
 
 			request << endarray;
-			request << key("Type") << String(name + count);
+			request << key("Type") << String(name + sz);
 			request << endtable;
 		}
 	}
@@ -224,6 +241,9 @@ struct InspectProcs : public IReflect {
 				const IScript::MetaMethod::TypedBase* entry = static_cast<const IScript::MetaMethod::TypedBase*>(node);
 				request << key(entry->name.empty() ? name : entry->name) << begintable << key("Params") << beginarray;
 				for (size_t i = 1; i < params.size(); i++) {
+					if (params[i].decayType == UniqueType<MatrixFloat4x4>::Get()) {
+						int a = 0;
+					}
 					InspectCustomStructure::ProcessMember(request, params[i].decayType, false, true);
 				}
 

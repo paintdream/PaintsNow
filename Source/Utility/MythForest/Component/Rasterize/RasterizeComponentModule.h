@@ -29,6 +29,6 @@ namespace PaintsNow {
 		/// <param name="rasterizeComponent"> the RasterizeComponent </param>
 		/// <param name="mesh"> mesh </param>
 		/// <param name="transform"> transform </param>
-		void RequestRenderMesh(IScript::Request& request, IScript::Delegate<RasterizeComponent> rasterizeComponent, IScript::Delegate<MeshResource>& meshResource, const MatrixFloat4x4& transform);
+		void RequestRenderMesh(IScript::Request& request, IScript::Delegate<RasterizeComponent> rasterizeComponent, IScript::Delegate<MeshResource> meshResource, const MatrixFloat4x4& transform);
 	};
 }

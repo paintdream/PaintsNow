@@ -25,7 +25,7 @@ TShared<RasterizeComponent> RasterizeComponentModule::RequestNew(IScript::Reques
 	return rasterizeComponent;
 }
 
-void RasterizeComponentModule::RequestRenderMesh(IScript::Request& request, IScript::Delegate<RasterizeComponent> rasterizeComponent, IScript::Delegate<MeshResource>& meshResource, const MatrixFloat4x4& transform) {
+void RasterizeComponentModule::RequestRenderMesh(IScript::Request& request, IScript::Delegate<RasterizeComponent> rasterizeComponent, IScript::Delegate<MeshResource> meshResource, const MatrixFloat4x4& transform) {
 	CHECK_REFERENCES_NONE();
 	CHECK_DELEGATE(meshResource);
 
