@@ -3,6 +3,8 @@
 using namespace PaintsNow;
 
 BridgeSunset::BridgeSunset(IThread& t, IScript& s, uint32_t threadCount, uint32_t warpCount) : ISyncObject(t), RequestPool(s, warpCount), threadPool(t, threadCount), kernel(threadPool, warpCount) {
+	memset(warpBitset, 0, sizeof(warpBitset));
+
 	if (!threadPool.IsInitialized()) {
 		threadPool.Initialize();
 	}
@@ -47,6 +49,10 @@ TObject<IReflect>& BridgeSunset::operator () (IReflect& reflect) {
 		ReflectMethod(RequestGetWarpCount)[ScriptMethodLocked = "GetWarpCount"];
 		ReflectMethod(RequestSetWarpIndex)[ScriptMethodLocked = "SetWarpIndex"];
 		ReflectMethod(RequestGetWarpIndex)[ScriptMethodLocked = "GetWarpIndex"];
+		ReflectMethod(RequestGetCurrentWarpIndex)[ScriptMethodLocked = "GetCurrentWarpIndex"];
+		ReflectMethod(RequestGetNullWarpIndex)[ScriptMethodLocked = "GetNullWarpIndex"];
+		ReflectMethod(RequestAllocateWarpIndex)[ScriptMethodLocked = "AllocateWarpIndex"];
+		ReflectMethod(RequestFreeWarpIndex)[ScriptMethodLocked = "FreeWarpIndex"];
 		ReflectMethod(RequestPin)[ScriptMethodLocked = "Pin"];
 		ReflectMethod(RequestUnpin)[ScriptMethodLocked = "Unpin"];
 		ReflectMethod(RequestClone)[ScriptMethod = "Clone"];
@@ -160,6 +166,18 @@ uint32_t BridgeSunset::RequestGetWarpIndex(IScript::Request& request, IScript::D
 	return source->GetWarpIndex();
 }
 
+uint32_t BridgeSunset::RequestGetCurrentWarpIndex(IScript::Request& request) {
+	CHECK_REFERENCES_NONE();
+
+	return kernel.GetCurrentWarpIndex();
+}
+
+uint32_t BridgeSunset::RequestGetNullWarpIndex(IScript::Request& request) {
+	CHECK_REFERENCES_NONE();
+
+	return ~(uint32_t)0;
+}
+
 TShared<SharedTiny> BridgeSunset::RequestClone(IScript::Request& request, IScript::Delegate<SharedTiny> source) {
 	CHECK_REFERENCES_NONE();
 	CHECK_DELEGATE(source);
@@ -181,3 +199,33 @@ void BridgeSunset::RequestUnpin(IScript::Request& request, IScript::Delegate<War
 	source->Flag().fetch_and(~Tiny::TINY_PINNED);
 }
 
+uint32_t BridgeSunset::RequestAllocateWarpIndex(IScript::Request& request) {
+	CHECK_REFERENCES_NONE();
+	static_assert(WARP_VAR_COUNT * sizeof(size_t) * 8 == (1 << WarpTiny::WARP_BITS), "Warp count must be multiplier of sizeof(size_t) * 8");
+
+	for (size_t i = 0; i < WARP_VAR_COUNT; i++) {
+		std::atomic<size_t>& v = reinterpret_cast<std::atomic<size_t>&>(warpBitset[i]);
+		size_t value = v.load(std::memory_order_relaxed);
+		if (value != ~(size_t)0) {
+			size_t mask = Math::Alignment(value + 1);
+			if (!(v.fetch_or(mask, std::memory_order_relaxed) & mask)) {
+				return (1 + Math::Log2x(mask)) & ((1 << WarpTiny::WARP_BITS) - 1); // warp 0 is reserved
+			}
+		}
+	}
+
+	// overflow
+	return 0;
+}
+
+void BridgeSunset::RequestFreeWarpIndex(IScript::Request& request, uint32_t warpIndex) {
+	CHECK_REFERENCES_NONE();
+
+	if (warpIndex-- != 0) {
+		std::atomic<size_t>& v = reinterpret_cast<std::atomic<size_t>&>(warpBitset[warpIndex / (sizeof(size_t) * 8)]);
+		size_t mask = (size_t)1 << (warpIndex & (sizeof(size_t) * 8 - 1));
+		v.fetch_and(~mask, std::memory_order_relaxed);
+	} else {
+		request.Error("Can not free warp 0");
+	}
+}

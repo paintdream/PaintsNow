@@ -20,7 +20,7 @@ TObject<IReflect>& RemoteComponentModule::operator () (IReflect& reflect) {
 	return *this;
 }
 
-TShared<RemoteComponent> RemoteComponentModule::RequestNew(IScript::Request& request, bool transparentMode) {
+TShared<RemoteComponent> RemoteComponentModule::RequestNew(IScript::Request& request, bool transparentMode, uint32_t warpIndex) {
 	CHECK_REFERENCES_NONE();
 
 	TShared<RemoteComponent> remoteComponent = TShared<RemoteComponent>::From(allocator->New(std::ref(engine)));
@@ -29,7 +29,7 @@ TShared<RemoteComponent> RemoteComponentModule::RequestNew(IScript::Request& req
 		remoteComponent->Flag().fetch_or(RemoteComponent::REMOTECOMPONENT_TRANSPARENT, std::memory_order_relaxed);
 	}
 
-	remoteComponent->SetWarpIndex(engine.GetKernel().GetCurrentWarpIndex());
+	remoteComponent->SetWarpIndex(warpIndex == ~(uint32_t)0 ? engine.GetKernel().GetCurrentWarpIndex() : warpIndex);
 	return remoteComponent;
 }
 

@@ -1,7 +1,7 @@
 local CrossRoutine = record end
 
 function CrossRoutine.New(callback : function (... : any)) : (function (func : function (... : any) : any...) : function (...:any) : any...)
-	local remoteComponent = RemoteComponentModule.New(true) -- use transparent mode
+	local remoteComponent = RemoteComponentModule.New(true, 0) -- use transparent mode
 	local setupEnvironment = remoteComponent:Load([[
 		local func, upvalues = ...
 		for i = 1, #upvalues / 2 do

@@ -21,8 +21,9 @@ namespace PaintsNow {
 		/// Create RemoteComponent
 		/// </summary>
 		/// <param name="transparentMode"> if it is transparent mode (i.e. auto-convert remote functions to local function proxies) </param>
+		/// <param name="warpIndex"> warp index </param>
 		/// <returns></returns>
-		TShared<RemoteComponent> RequestNew(IScript::Request& request, bool transparentMode);
+		TShared<RemoteComponent> RequestNew(IScript::Request& request, bool transparentMode, uint32_t warpIndex);
 
 		/// <summary>
 		/// Get RemoteRoutine of local engine from global name.

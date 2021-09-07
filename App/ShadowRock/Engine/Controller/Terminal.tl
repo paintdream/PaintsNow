@@ -4,6 +4,7 @@
 ]]
 
 local Core = require("Engine/Core")
+require("Runtime/Interface")
 
 local ConnectionRecord = record
 	Source : string

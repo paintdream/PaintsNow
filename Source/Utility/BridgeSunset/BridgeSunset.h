@@ -8,6 +8,7 @@
 #include "../../Core/System/Kernel.h"
 #include "../../Core/System/TaskGraph.h"
 #include "../../Core/Driver/Profiler/Optick/optick.h"
+#include <bitset>
 
 namespace PaintsNow {
 	class BridgeSunset : public TReflected<BridgeSunset, IScript::Library>, public IScript::RequestPool, public ISyncObject {
@@ -83,6 +84,30 @@ namespace PaintsNow {
 		uint32_t RequestGetWarpIndex(IScript::Request& request, IScript::Delegate<WarpTiny> source);
 
 		/// <summary>
+		/// Get current warp index
+		/// </summary>
+		/// <returns> the warp index of current thread </returns>
+		uint32_t RequestGetCurrentWarpIndex(IScript::Request& request);
+
+		/// <summary>
+		/// Get null warp index
+		/// </summary>
+		/// <returns> the warp index of null </returns>
+		uint32_t RequestGetNullWarpIndex(IScript::Request& request);
+
+		/// <summary>
+		/// Allocate warp index
+		/// </summary>
+		/// <returns> the new warp index </returns>
+		uint32_t RequestAllocateWarpIndex(IScript::Request& request);
+
+		/// <summary>
+		/// Free warp index
+		/// </summary>
+		/// <param name="warpIndex"> the warp index to free </param>
+		void RequestFreeWarpIndex(IScript::Request& request, uint32_t warpIndex);
+
+		/// <summary>
 		/// Pin tiny content
 		/// </summary>
 		/// <param name="source"> the source object </param>
@@ -105,6 +130,10 @@ namespace PaintsNow {
 		ThreadPool threadPool;
 		Kernel kernel;
 		TWrapper<void, IScript::Request&, IHost*, size_t, const TWrapper<void, IScript::Request&>&> origDispatcher;
+
+	protected:
+		enum { WARP_VAR_COUNT = (1 << WarpTiny::WARP_BITS) / (sizeof(size_t) * 8) };
+		size_t warpBitset[WARP_VAR_COUNT];
 	};
 
 #define CHECK_THREAD_IN_LIBRARY(warpTiny) \
