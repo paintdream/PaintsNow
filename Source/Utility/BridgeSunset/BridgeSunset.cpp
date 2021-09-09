@@ -9,7 +9,7 @@ SharedContext::~SharedContext() {
 	SharedContext* p = next.exchange(nullptr, std::memory_order_acq_rel);
 	while (p != nullptr) {
 		SharedContext* t = p;
-		p = p->next;
+		p = p->next.load(std::memory_order_relaxed);
 
 		t->next = nullptr;
 		t->ReleaseObject();
@@ -346,7 +346,7 @@ void BridgeSunset::RequestChainSharedContext(IScript::Request& request, IScript:
 
 	SharedContext* head = q->next.load(std::memory_order_relaxed);
 	do {
-		q->next = head;
+		q->next.store(head, std::memory_order_relaxed);
 	} while (p->next.compare_exchange_strong(head, q, std::memory_order_release, std::memory_order_relaxed));
 }
 
@@ -358,7 +358,7 @@ std::vector<TShared<SharedContext> > BridgeSunset::RequestExtractSharedContextCh
 	SharedContext* p = sentinelSharedContext->next.exchange(nullptr, std::memory_order_acq_rel);
 	while (p != nullptr) {
 		SharedContext* t = p;
-		p = p->next;
+		p = p->next.load(std::memory_order_relaxed);
 
 		t->next = nullptr;
 		result.emplace_back(TShared<SharedContext>::From(t));
