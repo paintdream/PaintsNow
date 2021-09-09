@@ -5,6 +5,11 @@ local ScriptDispatcher = record
 	__index : any
 end
 
+local Awaitable = record
+	Coroutine : thread
+	Finished : boolean
+end
+
 ScriptDispatcher.__index = ScriptDispatcher
 
 function ScriptDispatcher.New(warpBinding) : ScriptDispatcher
@@ -35,8 +40,9 @@ function ScriptDispatcher.New(warpBinding) : ScriptDispatcher
 	}, ScriptDispatcher as METATABLE)
 end
 
-function ScriptDispatcher.Dispatch(func : function (... : any) : any...)
-	-- TODO:
+function ScriptDispatcher:Dispatch(func : function (... : any) : any...)
+	-- select proper component
+		
 end
 
 return ScriptDispatcher

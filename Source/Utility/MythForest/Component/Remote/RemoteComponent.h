@@ -34,8 +34,10 @@ namespace PaintsNow {
 		TShared<RemoteRoutine> Get(const String& name);
 		void Call(IScript::Request& fromRequest, const TShared<RemoteRoutine>& remoteRoutine, IScript::Request::Arguments& args);
 		void CallAsync(IScript::Request& fromRequest, IScript::Request::Ref callback, const TShared<RemoteRoutine>& remoteRoutine, IScript::Request::Arguments& args);
+		bool TryCallAsync(IScript::Request& fromRequest, IScript::Request::Ref callback, const TShared<RemoteRoutine>& remoteRoutine, IScript::Request::Arguments& args);
 
 	protected:
+		void FinishCallAsync(IScript::Request& fromRequest, IScript::Request& toRequest, IScript::Request::Ref callback, const TShared<RemoteRoutine>& remoteRoutine, IScript::Request::Arguments& args);
 		void Complete(IScript::RequestPool* returnPool, IScript::Request& request, IScript::Request::Ref callback, const TShared<RemoteRoutine>& remoteRoutine);
 
 	protected:

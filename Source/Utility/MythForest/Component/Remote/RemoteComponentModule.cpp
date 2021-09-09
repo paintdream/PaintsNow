@@ -14,6 +14,7 @@ TObject<IReflect>& RemoteComponentModule::operator () (IReflect& reflect) {
 		ReflectMethod(RequestGet)[ScriptMethod = "Get"];
 		ReflectMethod(RequestCall)[ScriptMethod = "Call"];
 		ReflectMethod(RequestCallAsync)[ScriptMethod = "CallAsync"];
+		ReflectMethod(RequestTryCallAsync)[ScriptMethod = "TryCallAsync"];
 		ReflectMethod(RequestCleanup)[ScriptMethod = "Cleanup"];
 	}
 
@@ -65,6 +66,15 @@ void RemoteComponentModule::RequestCallAsync(IScript::Request& request, IScript:
 	// CHECK_THREAD_IN_MODULE(remoteComponent);
 
 	remoteComponent->CallAsync(request, callback, remoteRoutine.Get(), args);
+}
+
+bool RemoteComponentModule::RequestTryCallAsync(IScript::Request& request, IScript::Delegate<RemoteComponent> remoteComponent, IScript::Request::Ref callback, IScript::Delegate<RemoteRoutine> remoteRoutine, IScript::Request::Arguments& args) {
+	CHECK_REFERENCES_NONE();
+	CHECK_DELEGATE(remoteComponent);
+	CHECK_DELEGATE(remoteRoutine);
+	// CHECK_THREAD_IN_MODULE(remoteComponent);
+
+	return remoteComponent->TryCallAsync(request, callback, remoteRoutine.Get(), args);
 }
 
 void RemoteComponentModule::RequestCleanup(IScript::Request& request, IScript::Delegate<RemoteComponent> remoteComponent) {

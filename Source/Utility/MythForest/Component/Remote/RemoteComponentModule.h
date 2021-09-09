@@ -51,13 +51,23 @@ namespace PaintsNow {
 		void RequestCall(IScript::Request& request, IScript::Delegate<RemoteComponent> remoteComponent, IScript::Delegate<RemoteRoutine> remoteRoutine, IScript::Request::Arguments& args);
 
 		/// <summary>
-		/// Call RemoteRoutine in asynchronized way
+		/// Call RemoteRoutine in asynchronized way (blocked if waiting for target vm available
 		/// </summary>
 		/// <param name="remoteComponent"> the RemoteComponent </param>
 		/// <param name="callback"> callback on remote call finished </param>
 		/// <param name="remoteRoutine"> the RemoteRoutine </param>
 		/// <param name="args"> arguments </param>
 		void RequestCallAsync(IScript::Request& request, IScript::Delegate<RemoteComponent> remoteComponent, IScript::Request::Ref callback, IScript::Delegate<RemoteRoutine> remoteRoutine, IScript::Request::Arguments& args);
+
+		/// <summary>
+		/// Try to call RemoteRoutine in asynchronized way, returns false if target is not available
+		/// </summary>
+		/// <param name="remoteComponent"> the RemoteComponent </param>
+		/// <param name="callback"> callback on remote call finished </param>
+		/// <param name="remoteRoutine"> the RemoteRoutine </param>
+		/// <param name="args"> arguments </param>
+		/// <returns> true if success </returns>
+		bool RequestTryCallAsync(IScript::Request& request, IScript::Delegate<RemoteComponent> remoteComponent, IScript::Request::Ref callback, IScript::Delegate<RemoteRoutine> remoteRoutine, IScript::Request::Arguments& args);
 
 		/// <summary>
 		/// Cleanup RemoteComponent manually

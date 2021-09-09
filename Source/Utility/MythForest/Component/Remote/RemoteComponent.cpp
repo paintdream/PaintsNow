@@ -311,25 +311,46 @@ void RemoteComponent::Complete(IScript::RequestPool* returnPool, IScript::Reques
 	returnPool->requestPool.ReleaseSafe(&returnRequest);
 }
 
-void RemoteComponent::CallAsync(IScript::Request& fromRequest, IScript::Request::Ref callback, const TShared<RemoteRoutine>&remoteRoutine, IScript::Request::Arguments& args) {
+void RemoteComponent::FinishCallAsync(IScript::Request& fromRequest, IScript::Request& toRequest, IScript::Request::Ref callback, const TShared<RemoteRoutine>& remoteRoutine, IScript::Request::Arguments& args) {
+	toRequest.Push();
+	// read remaining parameters
+	uint32_t flag = Flag().load(std::memory_order_relaxed);
+	for (size_t i = 0; i < args.count; i++) {
+		CopyVariable(flag, toRequest, fromRequest, fromRequest.GetCurrentType());
+	}
+
+	toRequest.UnLock();
+	IScript::RequestPool* pool = fromRequest.GetRequestPool();
+	assert(&pool->GetScript() == fromRequest.GetScript());
+	fromRequest.UnLock();
+
+	engine.bridgeSunset.GetKernel().GetThreadPool().Dispatch(CreateTaskContextFree(Wrap(this, &RemoteComponent::Complete), pool, std::ref(toRequest), callback, remoteRoutine), 1);
+}
+
+bool RemoteComponent::TryCallAsync(IScript::Request& fromRequest, IScript::Request::Ref callback, const TShared<RemoteRoutine>& remoteRoutine, IScript::Request::Arguments& args) {
+	if (remoteRoutine->pool == this && remoteRoutine->ref) {
+		IScript::Request& toRequest = *requestPool.AcquireSafe();
+		fromRequest.DoLock();
+		if (toRequest.TryLock()) {
+			FinishCallAsync(fromRequest, toRequest, callback, remoteRoutine, args);
+			return true;
+		} else {
+			fromRequest.UnLock();
+			return false;
+		}
+	} else {
+		fromRequest.Error("Invalid ref.");
+		return false;
+	}
+}
+
+void RemoteComponent::CallAsync(IScript::Request& fromRequest, IScript::Request::Ref callback, const TShared<RemoteRoutine>& remoteRoutine, IScript::Request::Arguments& args) {
 	if (remoteRoutine->pool == this && remoteRoutine->ref) {
 		IScript::Request& toRequest = *requestPool.AcquireSafe();
 		fromRequest.DoLock();
 		toRequest.DoLock();
 
-		toRequest.Push();
-		// read remaining parameters
-		uint32_t flag = Flag().load(std::memory_order_relaxed);
-		for (size_t i = 0; i < args.count; i++) {
-			CopyVariable(flag, toRequest, fromRequest, fromRequest.GetCurrentType());
-		}
-
-		toRequest.UnLock();
-		IScript::RequestPool* pool = fromRequest.GetRequestPool();
-		assert(&pool->GetScript() == fromRequest.GetScript());
-		fromRequest.UnLock();
-
-		engine.bridgeSunset.GetKernel().GetThreadPool().Dispatch(CreateTaskContextFree(Wrap(this, &RemoteComponent::Complete), pool, std::ref(toRequest), callback, remoteRoutine), 1);
+		FinishCallAsync(fromRequest, toRequest, callback, remoteRoutine, args);
 	} else {
 		fromRequest.Error("Invalid ref.");
 	}
