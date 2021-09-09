@@ -11,6 +11,16 @@
 #include <bitset>
 
 namespace PaintsNow {
+	class SharedContext : public TReflected<SharedContext, SharedTiny> {
+	public:
+		SharedContext();
+		~SharedContext() override;
+
+		std::atomic<size_t> atomicValue;
+		std::atomic<SharedContext*> next;
+		std::vector<TShared<SharedTiny> > objectVector;
+	};
+
 	class BridgeSunset : public TReflected<BridgeSunset, IScript::Library>, public IScript::RequestPool, public ISyncObject {
 	public:
 		BridgeSunset(IThread& threadApi, IScript& script, uint32_t threadCount, uint32_t warpCount);
@@ -22,6 +32,96 @@ namespace PaintsNow {
 		void ContinueScriptDispatcher(IScript::Request& request, IHost* host, size_t paramCount, const TWrapper<void, IScript::Request&>& continuer);
 
 	protected:
+		/// <summary>
+		/// Create a new shared context
+		/// </summary>
+		/// <returns> shared context object </returns>
+		TShared<SharedContext> RequestNewSharedContext(IScript::Request& request);
+
+		/// <summary>
+		/// Set counter of shared context atomically, return the old value
+		/// </summary>
+		/// <param name="sharedContext"> the shared context </param>
+		/// <param name="counter"> the new counter </param>
+		/// <returns> old value of counter </returns>
+		size_t RequestSetSharedContextCounter(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext, size_t counter);
+
+		/// <summary>
+		/// Compare exchange counter of shared context atomically 
+		/// </summary>
+		/// <param name="sharedContext"> the shared context </param>
+		/// <param name="comparedTo"> the compared counter value </param>
+		/// <param name="counter"> the new counter value </param>
+		/// <returns> true if success </returns>
+		bool RequestCompareExchangeSharedContextCounter(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext, size_t comparedTo, size_t counter);
+
+		/// <summary>
+		/// Add counter of shared context atomically 
+		/// </summary>
+		/// <param name="sharedContext"> the shared context </param>
+		/// <param name="counter"> the delta new counter value </param>
+		/// <returns> old value of counter </returns>
+		size_t RequestAddSharedContextCounter(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext, size_t counter);
+
+		/// <summary>
+		/// Sub counter of shared context atomically 
+		/// </summary>
+		/// <param name="sharedContext"> the shared context </param>
+		/// <param name="counter"> the delta new counter value </param>
+		/// <returns> old value of counter </returns>
+		size_t RequestSubSharedContextCounter(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext, size_t counter);
+
+		/// <summary>
+		/// Get counter of shared context
+		/// </summary>
+		/// <param name="sharedContext"> the shared context </param>
+		/// <returns> the value of counter </returns>
+		size_t RequestGetSharedContextCounter(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext);
+
+		/// <summary>
+		/// Set object vector of shared context, this function is not thread-safe
+		/// </summary>
+		/// <param name="sharedContext"> the shared context </param>
+		/// <param name="tinies"> the vector of tiny to be set </param>
+		void RequestSetSharedContextObjects(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext, std::vector<IScript::Delegate<SharedTiny> >& tinies);
+
+		/// <summary>
+		/// Get objects of shared context, this function is not thread-safe with SetSharedContextObject
+		/// </summary>
+		/// <param name="sharedContext"> the shared context </param>
+		/// <param name="index"> the index </param>
+		/// <returns> TaskGraph object </returns>
+		const std::vector<TShared<SharedTiny> >& RequestGetSharedContextObjects(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext);
+
+		/// <summary>
+		/// Set object of shared context with given index, this function is not thread-safe with Get/SetSharedContextObject(s) with the same index
+		/// </summary>
+		/// <param name="sharedContext"> the shared context </param>
+		/// <param name="tiny"> the tiny to be set </param>
+		void RequestSetSharedContextObject(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext, size_t index, IScript::Delegate<SharedTiny> tiny);
+
+		/// <summary>
+		/// Get object of shared context with given index, this function is not thread-safe with SetSharedContextObject(s) with the same index
+		/// </summary>
+		/// <param name="sharedContext"> the shared context </param>
+		/// <param name="tiny"> the tiny to be set </param>
+		/// <returns> the object </returns>
+		TShared<SharedTiny> RequestGetSharedContextObject(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext, size_t index);
+
+		/// <summary>
+		/// Chain context to another atomically
+		/// </summary>
+		/// <param name="sentinelSharedContext"> the sentinel shared context with 'next' field as head pointer </param>
+		/// <param name="otherSharedContext"> the other shared context </param>
+		void RequestChainSharedContext(IScript::Request& request, IScript::Delegate<SharedContext> sentinelSharedContext, IScript::Delegate<SharedContext> sharedContext);
+
+		/// <summary>
+		/// Extract context chain
+		/// </summary>
+		/// <param name="sentinelSharedContext"> the sentinel shared context </param>
+		/// <returns> all shared context in chain </returns>
+		std::vector<TShared<SharedContext> > RequestExtractSharedContextChain(IScript::Request& request, IScript::Delegate<SharedContext> sentinelSharedContext);
+
 		/// <summary>
 		/// Create a new task graph
 		/// </summary>

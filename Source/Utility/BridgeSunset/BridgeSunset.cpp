@@ -1,6 +1,20 @@
 #include "BridgeSunset.h"
-
 using namespace PaintsNow;
+
+SharedContext::SharedContext() : next(nullptr) {
+	atomicValue.store(0, std::memory_order_release);
+}
+
+SharedContext::~SharedContext() {
+	SharedContext* p = next.exchange(nullptr, std::memory_order_acq_rel);
+	while (p != nullptr) {
+		SharedContext* t = p;
+		p = p->next;
+
+		t->next = nullptr;
+		t->ReleaseObject();
+	}
+}
 
 BridgeSunset::BridgeSunset(IThread& t, IScript& s, uint32_t threadCount, uint32_t warpCount) : ISyncObject(t), RequestPool(s, warpCount), threadPool(t, threadCount), kernel(threadPool, warpCount) {
 	memset(warpBitset, 0, sizeof(warpBitset));
@@ -41,6 +55,19 @@ void BridgeSunset::ScriptUninitialize(IScript::Request& request) {
 TObject<IReflect>& BridgeSunset::operator () (IReflect& reflect) {
 	BaseClass::operator () (reflect);
 	if (reflect.IsReflectMethod()) {
+		ReflectMethod(RequestNewSharedContext)[ScriptMethod = "NewSharedContext"];
+		ReflectMethod(RequestSetSharedContextCounter)[ScriptMethodLocked = "SetSharedContextCounter"];
+		ReflectMethod(RequestCompareExchangeSharedContextCounter)[ScriptMethodLocked = "CompareExchangeSharedContextCounter"];
+		ReflectMethod(RequestAddSharedContextCounter)[ScriptMethodLocked = "AddSharedContextCounter"];
+		ReflectMethod(RequestSubSharedContextCounter)[ScriptMethodLocked = "SubSharedContextCounter"];
+		ReflectMethod(RequestGetSharedContextCounter)[ScriptMethodLocked = "GetSharedContextCounter"];
+		ReflectMethod(RequestSetSharedContextObjects)[ScriptMethodLocked = "SetSharedContextObjects"];
+		ReflectMethod(RequestGetSharedContextObjects)[ScriptMethodLocked = "GetSharedContextObjects"];
+		ReflectMethod(RequestSetSharedContextObject)[ScriptMethodLocked = "SetSharedContextObject"];
+		ReflectMethod(RequestGetSharedContextObject)[ScriptMethodLocked = "GetSharedContextObject"];
+		ReflectMethod(RequestChainSharedContext)[ScriptMethodLocked = "ChainSharedContext"];
+		ReflectMethod(RequestExtractSharedContextChain)[ScriptMethodLocked = "ExtractSharedContextChain"];
+
 		ReflectMethod(RequestNewGraph)[ScriptMethod = "NewGraph"];
 		ReflectMethod(RequestQueueGraphRoutine)[ScriptMethodLocked = "QueueGraphRoutine"];
 		ReflectMethod(RequestConnectGraphRoutine)[ScriptMethodLocked = "ConnectGraphRoutine"];
@@ -229,3 +256,114 @@ void BridgeSunset::RequestFreeWarpIndex(IScript::Request& request, uint32_t warp
 		request.Error("Can not free warp 0");
 	}
 }
+
+TShared<SharedContext> BridgeSunset::RequestNewSharedContext(IScript::Request& request) {
+	return TShared<SharedContext>::From(new SharedContext());
+}
+
+size_t BridgeSunset::RequestSetSharedContextCounter(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext, size_t counter) {
+	CHECK_REFERENCES_NONE();
+	CHECK_DELEGATE(sharedContext);
+
+	return sharedContext->atomicValue.exchange(counter, std::memory_order_acq_rel);
+}
+
+bool BridgeSunset::RequestCompareExchangeSharedContextCounter(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext, size_t comparedTo, size_t counter) {
+	CHECK_REFERENCES_NONE();
+	CHECK_DELEGATE(sharedContext);
+
+	return sharedContext->atomicValue.compare_exchange_strong(comparedTo, counter, std::memory_order_acq_rel);
+}
+
+size_t BridgeSunset::RequestAddSharedContextCounter(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext, size_t counter) {
+	CHECK_REFERENCES_NONE();
+	CHECK_DELEGATE(sharedContext);
+
+	return sharedContext->atomicValue.fetch_add(counter, std::memory_order_acq_rel);
+}
+
+size_t BridgeSunset::RequestSubSharedContextCounter(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext, size_t counter) {
+	CHECK_REFERENCES_NONE();
+	CHECK_DELEGATE(sharedContext);
+
+	return sharedContext->atomicValue.fetch_sub(counter, std::memory_order_acq_rel);
+}
+
+size_t BridgeSunset::RequestGetSharedContextCounter(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext) {
+	CHECK_REFERENCES_NONE();
+	CHECK_DELEGATE(sharedContext);
+
+	return sharedContext->atomicValue.load(std::memory_order_acquire);
+}
+
+void BridgeSunset::RequestSetSharedContextObjects(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext, std::vector<IScript::Delegate<SharedTiny> >& tinies) {
+	CHECK_REFERENCES_NONE();
+	CHECK_DELEGATE(sharedContext);
+
+	std::vector<TShared<SharedTiny> > vec(tinies.size());
+	for (size_t i = 0; i < tinies.size(); i++) {
+		vec[i] = tinies[i].Get();
+	}
+
+	std::swap(sharedContext->objectVector, vec);
+}
+
+void BridgeSunset::RequestSetSharedContextObject(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext, size_t index, IScript::Delegate<SharedTiny> tiny) {
+	CHECK_REFERENCES_NONE();
+	CHECK_DELEGATE(sharedContext);
+
+	if (index < sharedContext->objectVector.size()) {
+		sharedContext->objectVector[index] = tiny.Get();
+	}
+}
+
+const std::vector<TShared<SharedTiny> >& BridgeSunset::RequestGetSharedContextObjects(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext) {
+	CHECK_REFERENCES_NONE();
+	CHECK_DELEGATE(sharedContext);
+
+	return sharedContext->objectVector;
+}
+
+TShared<SharedTiny> BridgeSunset::RequestGetSharedContextObject(IScript::Request& request, IScript::Delegate<SharedContext> sharedContext, size_t index) {
+	CHECK_REFERENCES_NONE();
+	CHECK_DELEGATE(sharedContext);
+
+	if (index < sharedContext->objectVector.size()) {
+		return sharedContext->objectVector[index];
+	} else {
+		return nullptr;
+	}
+}
+
+void BridgeSunset::RequestChainSharedContext(IScript::Request& request, IScript::Delegate<SharedContext> sentinelSharedContext, IScript::Delegate<SharedContext> sharedContext) {
+	CHECK_REFERENCES_NONE();
+	CHECK_DELEGATE(sentinelSharedContext);
+	CHECK_DELEGATE(sharedContext);
+
+	SharedContext* p = sentinelSharedContext.Get();
+	SharedContext* q = sharedContext.Get();
+	q->ReferenceObject();
+
+	SharedContext* head = q->next.load(std::memory_order_relaxed);
+	do {
+		q->next = head;
+	} while (p->next.compare_exchange_strong(head, q, std::memory_order_release, std::memory_order_relaxed));
+}
+
+std::vector<TShared<SharedContext> > BridgeSunset::RequestExtractSharedContextChain(IScript::Request& request, IScript::Delegate<SharedContext> sentinelSharedContext) {
+	CHECK_REFERENCES_NONE();
+	CHECK_DELEGATE(sentinelSharedContext);
+
+	std::vector<TShared<SharedContext> > result;
+	SharedContext* p = sentinelSharedContext->next.exchange(nullptr, std::memory_order_acq_rel);
+	while (p != nullptr) {
+		SharedContext* t = p;
+		p = p->next;
+
+		t->next = nullptr;
+		result.emplace_back(TShared<SharedContext>::From(t));
+	}
+
+	return result;
+}
+
