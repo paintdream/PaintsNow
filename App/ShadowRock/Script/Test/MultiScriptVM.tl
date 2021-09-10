@@ -34,34 +34,27 @@ function Test.Main()
 	transparent:Call(foo, function (msg : string)
 	   print("GET MSG: " .. msg)
 	end)
-	
-	local CrossRoutine = require("Engine/Controller/CrossRoutine")
-
-	-- CrossRoutine is running on another LuaVM
-	local upval = "~~~"
-	local cross = CrossRoutine.New(nil as function(any))
-	local rpc = cross(function (value : string) : string
-		return "Hello " .. value .. upval
-	end)
-
-	print("MSG " .. rpc("World!") as string)
-	print("MSG " .. rpc("NewWorld!") as string)
 
 	print("Testing CrossDispatcher~")
 	local CrossDispatcher = require("Engine/Controller/CrossDispatcher")
 	local dispatcher = CrossDispatcher.New(4)
+	local base = 2
 	print("Register dispatcher function ...")
-	dispatcher:Register("test", function (i)
+	local test = dispatcher:Setup(function (i : number) : number
 		print("Task " .. tostring(i) .. " finished.")
+		return i + base
 	end)
 
 	print("Dispatching ...")
-	for i = 1, 1000 do
-		dispatcher:Dispatch("test", i)
+	local awaitables : { Awaitable } = {}
+	for i = 1, 100 do
+		table.insert(awaitables, dispatcher:Dispatch(test, i))
 	end
 
 	print("Waiting ...")
-	dispatcher:Wait()
+	for i = 1, 100 do
+		print("Wait result: " .. tostring(dispatcher:Wait(awaitables[i])))
+	end
 
 	print("Finished.")
 end
