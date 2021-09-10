@@ -341,6 +341,7 @@ namespace PaintsNow {
 			Ref Reference(const Ref& d) override;
 			TYPE GetReferenceType(const Ref& d) override;
 			void Dereference(Ref& ref) override;
+			AutoWrapperBase* GetWrapper(const Ref& ref) override;
 			IScript::Request& MoveVariables(IScript::Request& target, size_t count) override;
 
 			class Packet : public TReflected<Packet, IReflectObjectComplex> {

@@ -1123,6 +1123,10 @@ void RemoteProxy::Request::Dereference(Ref& ref) {
 	ref.value = 0;
 }
 
+IScript::Request::AutoWrapperBase* RemoteProxy::Request::GetWrapper(const Ref& ref) {
+	return nullptr;
+}
+
 const char* RemoteProxy::GetFileExt() const {
 	return "rpc";
 }

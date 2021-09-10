@@ -164,14 +164,21 @@ static void CopyVariable(uint32_t flag, IScript::Request& request, IScript::Requ
 			// convert to reference
 			IScript::Request::Ref ref;
 			fromRequest >> ref;
-			// managed by remote routine
-			TShared<RemoteRoutine> remoteRoutine = TShared<RemoteRoutine>::From(new RemoteRoutine(fromRequest.GetRequestPool(), ref));
-			if (flag & RemoteComponent::REMOTECOMPONENT_TRANSPARENT) {
-				// create wrapper
-				RoutineWrapper routineWrapper(std::move(remoteRoutine));
-				request << request.Adapt(WrapClosure(std::move(routineWrapper), &RoutineWrapper::operator ()));
+			IScript::Request::AutoWrapperBase* wrapper = fromRequest.GetWrapper(ref);
+			if (wrapper != nullptr) {
+				// Native function
+				request << *wrapper;
+				fromRequest.Dereference(ref);
 			} else {
-				request << remoteRoutine;
+				// managed by remote routine
+				TShared<RemoteRoutine> remoteRoutine = TShared<RemoteRoutine>::From(new RemoteRoutine(fromRequest.GetRequestPool(), ref));
+				if (flag & RemoteComponent::REMOTECOMPONENT_TRANSPARENT) {
+					// create wrapper
+					RoutineWrapper routineWrapper(std::move(remoteRoutine));
+					request << request.Adapt(WrapClosure(std::move(routineWrapper), &RoutineWrapper::operator ()));
+				} else {
+					request << remoteRoutine;
+				}
 			}
 
 			break;
