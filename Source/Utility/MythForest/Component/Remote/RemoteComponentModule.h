@@ -70,6 +70,13 @@ namespace PaintsNow {
 		bool RequestTryCallAsync(IScript::Request& request, IScript::Delegate<RemoteComponent> remoteComponent, IScript::Request::Ref callback, IScript::Delegate<RemoteRoutine> remoteRoutine, IScript::Request::Arguments& args);
 
 		/// <summary>
+		/// Test if target remote component is locked.
+		/// </summary>
+		/// <param name="remoteComponent"> the RemoteComponent </param>
+		/// <returns> whether locked </returns>
+		bool RequestIsLocked(IScript::Request& request, IScript::Delegate<RemoteComponent> remoteComponent);
+
+		/// <summary>
 		/// Cleanup RemoteComponent manually
 		/// </summary>
 		/// <param name="remoteComponent"> the RemoteComponent </param>

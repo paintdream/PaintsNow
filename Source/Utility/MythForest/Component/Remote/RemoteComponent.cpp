@@ -334,6 +334,10 @@ void RemoteComponent::FinishCallAsync(IScript::Request& fromRequest, IScript::Re
 	engine.bridgeSunset.GetKernel().GetThreadPool().Dispatch(CreateTaskContextFree(Wrap(this, &RemoteComponent::Complete), pool, std::ref(toRequest), callback, remoteRoutine), 1);
 }
 
+bool RemoteComponent::IsLocked() const {
+	return script.IsLocked();
+}
+
 bool RemoteComponent::TryCallAsync(IScript::Request& fromRequest, IScript::Request::Ref callback, const TShared<RemoteRoutine>& remoteRoutine, IScript::Request::Arguments& args) {
 	if (remoteRoutine->pool == this && remoteRoutine->ref) {
 		IScript::Request& toRequest = *requestPool.AcquireSafe();

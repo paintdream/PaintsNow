@@ -184,6 +184,12 @@ namespace PaintsNow {
 		uint32_t RequestGetWarpIndex(IScript::Request& request, IScript::Delegate<WarpTiny> source);
 
 		/// <summary>
+		/// Get current thread index
+		/// </summary>
+		/// <returns> the thread index of current thread </returns>
+		uint32_t RequestGetCurrentThreadIndex(IScript::Request& request);
+
+		/// <summary>
 		/// Get current warp index
 		/// </summary>
 		/// <returns> the warp index of current thread </returns>

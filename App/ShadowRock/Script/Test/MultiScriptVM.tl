@@ -40,15 +40,16 @@ function Test.Main()
 	local dispatcher = CrossDispatcher.New(4)
 	local base = 2
 	print("Register dispatcher function ...")
+	local getThread = BridgeSunset.GetCurrentThreadIndex
 	local test = dispatcher:Setup(function (i : number) : number
-		print("Task " .. tostring(i) .. " finished.")
+		print("Task " .. tostring(i) .. " finished. on VM " .. tostring(getThread()))
 		return i + base
 	end)
 
 	print("Dispatching ...")
 	local awaitables : { Awaitable } = {}
 	for i = 1, 100 do
-		table.insert(awaitables, dispatcher:Dispatch(test, i))
+		table.insert(awaitables, dispatcher:Dispatch(test, i) as Awaitable)
 	end
 
 	print("Waiting ...")

@@ -76,6 +76,7 @@ TObject<IReflect>& BridgeSunset::operator () (IReflect& reflect) {
 		ReflectMethod(RequestGetWarpCount)[ScriptMethodLocked = "GetWarpCount"];
 		ReflectMethod(RequestSetWarpIndex)[ScriptMethodLocked = "SetWarpIndex"];
 		ReflectMethod(RequestGetWarpIndex)[ScriptMethodLocked = "GetWarpIndex"];
+		ReflectMethod(RequestGetCurrentThreadIndex)[ScriptMethodLocked = "GetCurrentThreadIndex"];
 		ReflectMethod(RequestGetCurrentWarpIndex)[ScriptMethodLocked = "GetCurrentWarpIndex"];
 		ReflectMethod(RequestGetNullWarpIndex)[ScriptMethodLocked = "GetNullWarpIndex"];
 		ReflectMethod(RequestAllocateWarpIndex)[ScriptMethodLocked = "AllocateWarpIndex"];
@@ -191,6 +192,12 @@ uint32_t BridgeSunset::RequestGetWarpIndex(IScript::Request& request, IScript::D
 	CHECK_DELEGATE(source);
 
 	return source->GetWarpIndex();
+}
+
+uint32_t BridgeSunset::RequestGetCurrentThreadIndex(IScript::Request& request) {
+	CHECK_REFERENCES_NONE();
+
+	return kernel.GetThreadPool().GetCurrentThreadIndex();
 }
 
 uint32_t BridgeSunset::RequestGetCurrentWarpIndex(IScript::Request& request) {
@@ -353,7 +360,7 @@ void BridgeSunset::RequestChainSharedContext(IScript::Request& request, IScript:
 std::vector<TShared<SharedContext> > BridgeSunset::RequestExtractSharedContextChain(IScript::Request& request, IScript::Delegate<SharedContext> sentinelSharedContext) {
 	CHECK_REFERENCES_NONE();
 	CHECK_DELEGATE(sentinelSharedContext);
-
+	
 	std::vector<TShared<SharedContext> > result;
 	SharedContext* p = sentinelSharedContext->next.exchange(nullptr, std::memory_order_acq_rel);
 	while (p != nullptr) {

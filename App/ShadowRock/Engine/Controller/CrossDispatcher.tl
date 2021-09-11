@@ -1,9 +1,15 @@
+local DelayedRoutine = record
+	Routines : { RemoteRoutine }
+	Parameters : { any }
+	Callback : any
+end
+
 local CrossDispatcher = record
 	WarpBinding : { number }
 	ScriptPool : { RemoteComponent }
 	Setups : { RemoteRoutine }
 	ManagedWarp : boolean
-	RoundIndex : number
+	DelayedRoutines : { DelayedRoutine }
 	__index : any
 end
 
@@ -60,7 +66,7 @@ function CrossDispatcher.New(warpBinding : number | { number }) : CrossDispatche
 		ScriptPool = scriptPool,
 		Setups = setups,
 		ManagedWarp = managedWarp,
-		RoundIndex = 0,
+		DelayedRoutines = {}
 	}, CrossDispatcher as METATABLE)
 end
 
@@ -86,8 +92,37 @@ function CrossDispatcher:Setup(func : function (... : any) : any...) : { RemoteR
 		table.insert(remoteRoutines, remoteFunc)
 	end
 
-	table.insert(remoteRoutines, func as RemoteRoutine)
 	return remoteRoutines
+end
+
+function CrossDispatcher:_DispatchWithCallback(callback : any, remoteRoutines : { RemoteRoutine }, ... : any) : number
+	local scriptPool = self.ScriptPool
+	local count = #scriptPool
+
+	for i = 1, count do
+		local remoteComponent = scriptPool[i]
+		if not remoteComponent:IsLocked() and remoteComponent:TryCallAsync(callback, remoteRoutines[i], ...) then
+			return i
+		end
+	end
+
+	return 0
+end
+
+function CrossDispatcher:PollDelayedRoutines()
+	local routines = self.DelayedRoutines
+	local count = #self.ScriptPool
+	while next(routines) do
+		local delayed = table.remove(routines)
+		local id = self:_DispatchWithCallback(delayed.Callback, delayed.Routines, table.unpack(delayed.Parameters))
+		if id == 0 then
+			-- could not happen unless some RemoteComponent is being operated out of CrossDispatcher
+			table.insert(routines, delayed)
+			break
+		elseif id == count then
+			break
+		end
+	end
 end
 
 function CrossDispatcher:Dispatch(remoteRoutines : { RemoteRoutine }, ... : any) : Awaitable
@@ -100,26 +135,24 @@ function CrossDispatcher:Dispatch(remoteRoutines : { RemoteRoutine }, ... : any)
 		else
 			awaitable.Returns = table.pack(...) as { any }
 		end
+		
+		-- poll next
+		self:PollDelayedRoutines()
 	end
 
-	local roundIndex = self.RoundIndex
-	local scriptPool = self.ScriptPool
-	local count = #scriptPool
+	if self:_DispatchWithCallback(callback, remoteRoutines, ...) ~= 0 then
+		return awaitable
+	else
+		-- failed, make delayed routine
+		local delayed = {
+			Routines = remoteRoutines,
+			Parameters = table.pack(...) as { any }
+			Callback = callback
+		}
 
-	for i = 1, count do
-		local index = ((i + roundIndex - 1) % count) + 1
-		local remoteComponent = scriptPool[index]
-		if remoteComponent:TryCallAsync(callback, remoteRoutines[index], ...) then
-			self.RoundIndex = index
-			return awaitable
-		end
+		table.insert(self.DelayedRoutines, delayed)
+		return awaitable
 	end
-
-	-- fails, run locally
-	local func = remoteRoutines[count + 1] as function (... : any) : any...
-	awaitable.Returns = table.pack(func(...)) as { any }
-
-	return awaitable
 end
 
 function CrossDispatcher:Wait(awaitable : Awaitable) : any...

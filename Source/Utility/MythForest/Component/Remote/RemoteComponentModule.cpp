@@ -15,6 +15,7 @@ TObject<IReflect>& RemoteComponentModule::operator () (IReflect& reflect) {
 		ReflectMethod(RequestCall)[ScriptMethod = "Call"];
 		ReflectMethod(RequestCallAsync)[ScriptMethod = "CallAsync"];
 		ReflectMethod(RequestTryCallAsync)[ScriptMethod = "TryCallAsync"];
+		ReflectMethod(RequestIsLocked)[ScriptMethodLocked = "IsLocked"];
 		ReflectMethod(RequestCleanup)[ScriptMethod = "Cleanup"];
 	}
 
@@ -75,6 +76,14 @@ bool RemoteComponentModule::RequestTryCallAsync(IScript::Request& request, IScri
 	// CHECK_THREAD_IN_MODULE(remoteComponent);
 
 	return remoteComponent->TryCallAsync(request, callback, remoteRoutine.Get(), args);
+}
+
+bool RemoteComponentModule::RequestIsLocked(IScript::Request& request, IScript::Delegate<RemoteComponent> remoteComponent) {
+	CHECK_REFERENCES_NONE();
+	CHECK_DELEGATE(remoteComponent);
+	// CHECK_THREAD_IN_MODULE(remoteComponent);
+
+	return remoteComponent->IsLocked();
 }
 
 void RemoteComponentModule::RequestCleanup(IScript::Request& request, IScript::Delegate<RemoteComponent> remoteComponent) {
