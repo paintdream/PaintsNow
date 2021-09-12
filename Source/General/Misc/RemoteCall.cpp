@@ -2,11 +2,15 @@
 #include "../../Core/Driver/Profiler/Optick/optick.h"
 using namespace PaintsNow;
 
-RemoteCall::RemoteCall(IThread& thread, ITunnel& t, IFilterBase& f, const String& e, const TWrapper<void, bool, STATUS, const String&>& sh) : threadApi(thread), tunnel(t), filter(f), entry(e), statusHandler(sh), dispatcher(nullptr) {
+RemoteCall::RemoteCall(IThread& thread, ITunnel& t, IFilterBase& f, const String& e, const TWrapper<void, bool, STATUS, const String&>& sh) : threadApi(thread), tunnel(t), filter(f), entry(e), statusHandler(sh), dispatcher(nullptr), outConnection(nullptr), currentIndex(0) {
 	dispThread.store(nullptr, std::memory_order_release);
 }
 
 void RemoteCall::Stop() {
+	if (outConnection != nullptr) {
+		tunnel.CloseConnection(outConnection);
+	}
+
 	if (dispatcher != nullptr) {
 		tunnel.DeactivateDispatcher(dispatcher);
 
@@ -24,6 +28,12 @@ RemoteCall::~RemoteCall() {
 	if (dispatcher != nullptr) {
 		tunnel.CloseDispatcher(dispatcher);
 	}
+}
+
+void RemoteCall::Connect(const String& target) {
+	assert(outConnection != nullptr);
+	assert(dispatcher != nullptr);
+	outConnection = tunnel.OpenConnection(dispatcher, Wrap(this, &RemoteCall::HandleEvent), target);
 }
 
 bool RemoteCall::ThreadProc(IThread::Thread* thread, size_t context) {
@@ -51,7 +61,15 @@ bool RemoteCall::ThreadProc(IThread::Thread* thread, size_t context) {
 	return false;
 }
 
-void RemoteCall::HandleEvent(ITunnel::EVENT event) {}
+void RemoteCall::Flush() {
+	
+}
+
+void RemoteCall::HandleEvent(ITunnel::EVENT event) {
+	if (event == ITunnel::AWAKE) {
+
+	}
+}
 
 void RemoteCall::Reset() {
 	Stop();
@@ -70,6 +88,6 @@ bool RemoteCall::Run() {
 }
 
 const ITunnel::Handler RemoteCall::OnConnection(ITunnel::Connection* connection) {
-	// TODO:
-	return nullptr;
+	inConnections.emplace_back(connection);
+	return Wrap(this, &RemoteCall::HandleEvent);
 }

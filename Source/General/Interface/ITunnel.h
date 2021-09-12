@@ -26,7 +26,7 @@ namespace PaintsNow {
 		virtual Dispatcher* GetConnectionDispatcher(Connection* connection) = 0;
 		virtual void CloseDispatcher(Dispatcher* dispatcher) = 0;
 
-		enum EVENT { CONNECTED, TIMEOUT, READ, WRITE, CLOSE, ABORT, CUSTOM };
+		enum EVENT { CONNECTED, TIMEOUT, READ, WRITE, CLOSE, ABORT, AWAKE, CUSTOM };
 		virtual Listener* OpenListener(Dispatcher* dispatcher, const TWrapper<void, EVENT>& eventHandler, const TWrapper<const TWrapper<void, EVENT>, Connection*>& callback, const String& address) = 0;
 		virtual bool ActivateListener(Listener* listener) = 0;
 		virtual void GetListenerInfo(Listener* listener, String& address) = 0;
@@ -37,6 +37,7 @@ namespace PaintsNow {
 		virtual bool ActivateConnection(Connection* connection) = 0;
 		virtual void GetConnectionInfo(Connection* connection, String& from, String& to) = 0;
 		virtual void Flush(Connection* connection) = 0;
+		virtual void Wakeup(Connection* connection) = 0;
 		virtual bool ReadConnection(Connection* connection, void* data, size_t& length) = 0;
 		virtual bool WriteConnection(Connection* connection, const void* data, size_t& length) = 0;
 		virtual void DeactivateConnection(Connection* connection) = 0;

@@ -3,6 +3,7 @@
 using namespace PaintsNow;
 
 ITunnel::~ITunnel() {}
+
 bool ITunnel::ReadConnectionPacket(Connection* c, void* data, PacketSizeType& bufferLength, Packet& packet) {
 	size_t availableBytes = 0;
 	assert(bufferLength != 0);

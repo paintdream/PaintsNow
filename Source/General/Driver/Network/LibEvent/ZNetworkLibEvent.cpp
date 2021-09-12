@@ -52,6 +52,7 @@ struct DispatcherImpl : public INetwork::Dispatcher {
 #endif
 };
 
+#define BEV_EVENT_WAKEUP 0x1000
 
 struct ListenerImpl : public INetwork::Listener {
 	TWrapper<const TWrapper<void, INetwork::EVENT>, INetwork::Connection*> callback;
@@ -126,6 +127,13 @@ static void conn_readcb(struct bufferevent *bev, void *user_data) {
 
 static void conn_eventcb(struct bufferevent *bev, short events, void *user_data) {
 	ConnectionImpl* c = reinterpret_cast<ConnectionImpl*>(user_data);
+
+	if (events & BEV_EVENT_WAKEUP) {
+		// printf("Connection awaked.\n");
+		event_base* base = c->dispatcher->base;
+		c->callback(INetwork::AWAKE);
+		return;
+	}
 
 	if (events & BEV_EVENT_EOF) {
 		// printf("Connection closed.\n");
@@ -498,6 +506,11 @@ void ZNetworkLibEvent::DeactivateConnection(Connection* c) {
 void ZNetworkLibEvent::Flush(Connection* c) {
 	ConnectionImpl* connection = static_cast<ConnectionImpl*>(c);
 	bufferevent_flush(connection->bev, EV_WRITE, BEV_FLUSH);
+}
+
+void ZNetworkLibEvent::Wakeup(Connection* c) {
+	ConnectionImpl* connection = static_cast<ConnectionImpl*>(c);
+	bufferevent_trigger_event(connection->bev, BEV_EVENT_WAKEUP, 0);
 }
 
 bool ZNetworkLibEvent::WriteConnection(Connection* c, const void* data, size_t& length) {
