@@ -2,14 +2,94 @@
 #include "../../Core/Driver/Profiler/Optick/optick.h"
 using namespace PaintsNow;
 
-RemoteCall::RemoteCall(IThread& thread, ITunnel& t, IFilterBase& f, const String& e, const TWrapper<void, bool, STATUS, const String&>& sh) : threadApi(thread), tunnel(t), filter(f), entry(e), statusHandler(sh), dispatcher(nullptr), outConnection(nullptr), currentIndex(0) {
+const size_t CHUNK_SIZE = 0x1000;
+
+RemoteCall::Session::Session(RemoteCall& r) : remoteCall(r), connection(nullptr), inputStream(CHUNK_SIZE, true), outputStream(CHUNK_SIZE, true), requestID(0) {}
+RemoteCall::Session::~Session() {
+	if (connection != nullptr) {
+		remoteCall.GetTunnel().CloseConnection(connection);
+	}
+}
+
+void RemoteCall::Session::Flush() {
+	// send pending tasks
+	ITunnel& tunnel = remoteCall.GetTunnel();
+	IFilterBase& filter = remoteCall.GetFilter();
+
+	while (!requestQueue.Empty()) {
+		TShared<RequestBase> request = requestQueue.Top();
+		requestQueue.Pop();
+		outputStream << request->name << ++requestID;
+		IStreamBase* encodeStream = filter.CreateFilter(outputStream);
+		request->Prepare(*encodeStream);
+		encodeStream->Destroy();
+
+		completionMap[requestID] = request;
+
+		ITunnel::Packet packet;
+		packet.header.length = verify_cast<ITunnel::PacketSizeType>(outputStream.GetOffset());
+		tunnel.WriteConnectionPacket(connection, outputStream.GetBuffer(), verify_cast<ITunnel::PacketSizeType>(outputStream.GetOffset()), packet);
+
+		outputStream.Seek(IStreamBase::BEGIN, 0);
+	}
+}
+
+void RemoteCall::Session::HandleEvent(ITunnel::EVENT event) {
+	ITunnel& tunnel = remoteCall.GetTunnel();
+
+	if (event == ITunnel::READ) {
+		String segment;
+		ITunnel::PacketSizeType blockSize = CHUNK_SIZE;
+		segment.resize(blockSize);
+		const std::unordered_map<String, TShared<ResponseBase> >& requestHandlers = remoteCall.GetRequestHandlers();
+		IFilterBase& filter = remoteCall.GetFilter();
+
+		while (tunnel.ReadConnectionPacket(connection, const_cast<char*>(segment.data()), blockSize, currentState)) {
+			// new packet?
+			size_t len = blockSize;
+			inputStream.Write(segment.data(), len);
+			if (currentState.cursor == currentState.header.length) {
+				// full packet received
+				String name;
+				uint32_t id;
+				inputStream >> name >> id;
+				if (name.empty()) { // response received
+					std::unordered_map<uint32_t, TShared<RequestBase> >::iterator it = completionMap.find(id);
+					if (it != completionMap.end()) {
+						(*it).second->Complete(inputStream);
+						completionMap.erase(it);
+					}
+				} else {
+					std::unordered_map<String, TShared<ResponseBase> >::const_iterator it = requestHandlers.find(name);
+					if (it != requestHandlers.end()) {
+						IStreamBase* inputEncodeStream = filter.CreateFilter(inputStream);
+						IStreamBase* outputEncodeStream = filter.CreateFilter(outputStream);
+						(*it).second->Handle(outputStream, inputStream);
+						outputEncodeStream->Destroy();
+						inputEncodeStream->Destroy();
+					}
+
+					ITunnel::Packet packet;
+					packet.header.length = verify_cast<ITunnel::PacketSizeType>(outputStream.GetOffset());
+					tunnel.WriteConnectionPacket(connection, outputStream.GetBuffer(), verify_cast<ITunnel::PacketSizeType>(outputStream.GetOffset()), packet);
+					outputStream.Seek(IStreamBase::BEGIN, 0);
+				}
+
+				inputStream.Seek(IStreamBase::BEGIN, 0);
+			}
+		}
+	} else {
+		// TODO: other events
+	}
+}
+
+RemoteCall::RemoteCall(IThread& thread, ITunnel& t, IFilterBase& f, const String& e, const TWrapper<void, bool, STATUS, const String&>& sh) : threadApi(thread), tunnel(t), filter(f), entry(e), statusHandler(sh), dispatcher(nullptr), currentResponseID(0) {
 	dispThread.store(nullptr, std::memory_order_release);
 }
 
 void RemoteCall::Stop() {
-	if (outConnection != nullptr) {
-		tunnel.CloseConnection(outConnection);
-	}
+	outputSession = nullptr;
+	inputSessions.clear();
 
 	if (dispatcher != nullptr) {
 		tunnel.DeactivateDispatcher(dispatcher);
@@ -31,9 +111,12 @@ RemoteCall::~RemoteCall() {
 }
 
 void RemoteCall::Connect(const String& target) {
-	assert(outConnection != nullptr);
 	assert(dispatcher != nullptr);
-	outConnection = tunnel.OpenConnection(dispatcher, Wrap(this, &RemoteCall::HandleEvent), target);
+
+	TShared<Session> session = TShared<Session>::From(new Session(*this));
+	session->connection = tunnel.OpenConnection(dispatcher, Wrap(session(), &Session::HandleEvent), target);
+
+	outputSession = session;
 }
 
 bool RemoteCall::ThreadProc(IThread::Thread* thread, size_t context) {
@@ -62,21 +145,21 @@ bool RemoteCall::ThreadProc(IThread::Thread* thread, size_t context) {
 }
 
 void RemoteCall::Flush() {
-	
+	tunnel.Wakeup(outputSession->connection);
 }
 
 void RemoteCall::HandleEvent(ITunnel::EVENT event) {
 	if (event == ITunnel::AWAKE) {
-
+		outputSession->Flush();
 	}
 }
 
 void RemoteCall::Reset() {
 	Stop();
-	Run();
+	Start();
 }
 
-bool RemoteCall::Run() {
+bool RemoteCall::Start() {
 	if (dispatcher == nullptr) {
 		dispatcher = tunnel.OpenDispatcher();
 	}
@@ -88,6 +171,9 @@ bool RemoteCall::Run() {
 }
 
 const ITunnel::Handler RemoteCall::OnConnection(ITunnel::Connection* connection) {
-	inConnections.emplace_back(connection);
-	return Wrap(this, &RemoteCall::HandleEvent);
+	TShared<Session> session = TShared<Session>::From(new Session(*this));
+	session->connection = connection;
+
+	std::binary_insert(inputSessions, session);
+	return Wrap(session(), &Session::HandleEvent);
 }
