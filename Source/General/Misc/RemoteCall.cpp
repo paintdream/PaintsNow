@@ -37,7 +37,7 @@ void RemoteCall::Session::Flush() {
 
 void RemoteCall::Session::HandleEvent(ITunnel::EVENT event) {
 	ITunnel& tunnel = remoteCall.GetTunnel();
-	const TWrapper<void, RemoteCall&, ITunnel::Connection*, STATUS>& statusHandler = remoteCall.GetServerStatusHandler();
+	const TWrapper<void, RemoteCall&, ITunnel::Connection*, STATUS>& statusHandler = clientStatusHandler ? clientStatusHandler : remoteCall.GetServerStatusHandler();
 	// { CONNECTED, TIMEOUT, READ, WRITE, CLOSE, ERROR }
 	switch (event) {
 	case ITunnel::CONNECTED:
@@ -51,6 +51,7 @@ void RemoteCall::Session::HandleEvent(ITunnel::EVENT event) {
 	case ITunnel::READ:
 		// Handle for new call
 		Process();
+		Flush();
 		break;
 	case ITunnel::WRITE:
 		break;
@@ -87,6 +88,8 @@ void RemoteCall::Session::Process() {
 		// new packet?
 		size_t len = blockSize;
 		inputStream.Write(segment.data(), len);
+		inputStream.Seek(IStreamBase::BEGIN, 0);
+
 		if (currentState.cursor == currentState.header.length) {
 			// full packet received
 			String name;
@@ -96,15 +99,19 @@ void RemoteCall::Session::Process() {
 			if (name.empty()) { // response received
 				std::unordered_map<uint32_t, TShared<RequestBase> >::iterator it = completionMap.find(id);
 				if (it != completionMap.end()) {
-					(*it).second->Complete(remoteCall, inputStream);
+					IStreamBase* inputEncodeStream = filter.CreateFilter(inputStream);
+					(*it).second->Complete(remoteCall, *inputEncodeStream);
+					inputEncodeStream->Destroy();
 					completionMap.erase(it);
 				}
 			} else {
+				outputStream << String("") << id;
+
 				std::unordered_map<String, TShared<ResponseBase> >::const_iterator it = requestHandlers.find(name);
 				if (it != requestHandlers.end()) {
 					IStreamBase* inputEncodeStream = filter.CreateFilter(inputStream);
 					IStreamBase* outputEncodeStream = filter.CreateFilter(outputStream);
-					bool sync = (*it).second->Handle(remoteCall, outputStream, inputStream);
+					bool sync = (*it).second->Handle(remoteCall, *outputEncodeStream, *inputEncodeStream);
 					assert(sync); // we only support synchronized call currently
 					outputEncodeStream->Destroy();
 					inputEncodeStream->Destroy();
@@ -154,6 +161,7 @@ void RemoteCall::Connect(const TWrapper<void, RemoteCall&, ITunnel::Connection*,
 	TShared<Session> session = TShared<Session>::From(new Session(*this));
 	session->clientStatusHandler = clientStatusHandler;
 	session->connection = tunnel.OpenConnection(dispatcher, Wrap(session(), &Session::HandleEvent), target);
+	tunnel.ActivateConnection(session->connection);
 
 	outputSession = session;
 }
@@ -191,14 +199,11 @@ bool RemoteCall::ThreadProc(IThread::Thread* thread, size_t context) {
 }
 
 void RemoteCall::Flush() {
-	tunnel.Wakeup(outputSession->connection);
+	assert(outputSession);
+	outputSession->Flush();
 }
 
-void RemoteCall::HandleEvent(ITunnel::EVENT event) {
-	if (event == ITunnel::AWAKE) {
-		outputSession->Flush();
-	}
-}
+void RemoteCall::HandleEvent(ITunnel::EVENT event) {}
 
 void RemoteCall::Reset() {
 	Stop();

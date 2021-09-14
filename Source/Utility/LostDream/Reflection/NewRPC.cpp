@@ -42,7 +42,7 @@ struct OutputPacket : public TReflected<OutputPacket, IReflectObjectComplex> {
 	std::vector<String> vecValue;
 };
 
-static bool ServerProcess(RemoteCall& remoteCall, OutputPacket& outputPacket, rvalue<InputPacket> inputPacketParam) {
+static bool ServerProcess(RemoteCall& remoteCall, OutputPacket& outputPacket, InputPacket& inputPacketParam) {
 	InputPacket& inputPacket = inputPacketParam;
 	outputPacket.fltValue = inputPacket.intValue / 10.0f;
 	outputPacket.vecValue.emplace_back(inputPacket.stringValue + "_response");
@@ -61,7 +61,8 @@ static void OnClientConnect(RemoteCall& remoteCall, ITunnel::Connection* connect
 		InputPacket inputPacket;
 		inputPacket.intValue = 3389;
 		inputPacket.stringValue = "hi~";
-		remoteCall.Call(Wrap(ClientReceive), "ServerProcess", std::move(inputPacket));
+		remoteCall.Call("ServerProcess", std::move(inputPacket), Wrap(ClientReceive));
+		remoteCall.Flush();
 		printf("Server Connected ... %p\n", connection);
 	} else if (status == RemoteCall::CLOSED || status == RemoteCall::ABORTED) {
 		printf("Server Disconnected ... %p\n", connection);
@@ -87,7 +88,7 @@ bool NewRPC::Run(int randomSeed, int length) {
 	RemoteCall serverCall(uniqueThreadApi, tunnel, filterPod, "127.0.0.1:16384", Wrap(OnServerConnect));
 	serverCall.Register("ServerProcess", Wrap(ServerProcess));
 	serverCall.Start();
-	getchar();
+	uniqueThreadApi.Sleep(2000);
 
 	for (int i = 0; i < length; i++) {
 		RemoteCall clientCall(uniqueThreadApi, tunnel, filterPod);

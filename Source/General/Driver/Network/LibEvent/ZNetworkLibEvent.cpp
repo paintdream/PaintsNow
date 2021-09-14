@@ -508,11 +508,6 @@ void ZNetworkLibEvent::Flush(Connection* c) {
 	bufferevent_flush(connection->bev, EV_WRITE, BEV_FLUSH);
 }
 
-void ZNetworkLibEvent::Wakeup(Connection* c) {
-	ConnectionImpl* connection = static_cast<ConnectionImpl*>(c);
-	bufferevent_trigger_event(connection->bev, BEV_EVENT_WAKEUP, 0);
-}
-
 bool ZNetworkLibEvent::WriteConnection(Connection* c, const void* data, size_t& length) {
 	ConnectionImpl* connection = static_cast<ConnectionImpl*>(c);
 	evbuffer* buf = bufferevent_get_output(connection->bev);

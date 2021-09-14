@@ -37,7 +37,6 @@ namespace PaintsNow {
 		virtual bool ActivateConnection(Connection* connection) = 0;
 		virtual void GetConnectionInfo(Connection* connection, String& from, String& to) = 0;
 		virtual void Flush(Connection* connection) = 0;
-		virtual void Wakeup(Connection* connection) = 0;
 		virtual bool ReadConnection(Connection* connection, void* data, size_t& length) = 0;
 		virtual bool WriteConnection(Connection* connection, const void* data, size_t& length) = 0;
 		virtual void DeactivateConnection(Connection* connection) = 0;

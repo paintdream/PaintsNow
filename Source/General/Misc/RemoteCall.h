@@ -18,7 +18,6 @@ namespace PaintsNow {
 	protected:
 		class RequestBase : public SharedTiny {
 		public:
-			RequestBase(const String& n) : name(n) {}
 			virtual void Prepare(IStreamBase& stream) = 0;
 			virtual void Complete(RemoteCall&, IStreamBase& stream) = 0;
 
@@ -28,13 +27,15 @@ namespace PaintsNow {
 		template <class Input, class Output>
 		class Request : public TReflected<Request<Input, Output>, RequestBase> {
 		public:
-			Request(const String& n, rvalue<Input> input, const TWrapper<void, RemoteCall&, rvalue<Output> >& callback) : BaseClass(n), wrapper(callback),
+			Request(const String& n, rvalue<Input> input, const TWrapper<void, RemoteCall&, rvalue<Output> >& callback) : wrapper(callback),
 #if defined(_MSC_VER) && _MSC_VER <= 1200
 				inputPacket(input)
 #else
 				inputPacket(std::move(input))
 #endif
-			{}
+			{
+				RequestBase::name = n;
+			}
 
 			void Prepare(IStreamBase& stream) override {
 				stream << inputPacket;
@@ -59,20 +60,20 @@ namespace PaintsNow {
 		template <class Input, class Output>
 		class Response : public TReflected<Response<Input, Output>, ResponseBase> {
 		public:
-			Response(const TWrapper<bool, RemoteCall&, Output&, rvalue<Input> >& handler) : wrapper(handler) {}
+			Response(const TWrapper<bool, RemoteCall&, Output&, Input&>& handler) : wrapper(handler) {}
 
 			bool Handle(RemoteCall& remoteCall, IStreamBase& outputStream, IStreamBase& inputStream) override {
 				Input inputPacket;
 				Output outputPacket;
 
 				inputStream >> inputPacket;
-				bool sync = wrapper(remoteCall, outputPacket, std::move(inputPacket));
+				bool sync = wrapper(remoteCall, outputPacket, inputPacket);
 				outputStream << std::move(outputPacket);
 
 				return sync;
 			}
 
-			TWrapper<bool, RemoteCall&, Output&, rvalue<Input> > wrapper;
+			TWrapper<bool, RemoteCall&, Output&, Input&> wrapper;
 		};
 
 		class Session : public TReflected<Session, SharedTiny> {
@@ -108,13 +109,21 @@ namespace PaintsNow {
 		ITunnel& GetTunnel() { return tunnel; }
 		IFilterBase& GetFilter() { return filter; }
 
+		// Compatible for VC6
+#if defined(_MSC_VER) && _MSC_VER <= 1200
+		template <class F>
+		void Register(const String& name, const F& wrapper) {
+			requestHandlers[name] = TShared<ResponseBase>::From(new Response<std::remove_reference<F::_C>::type, std::remove_reference<F::_B>::type>(wrapper));
+		}
+#else
 		template <class Input, class Output>
-		void Register(const String& name, const TWrapper<bool, RemoteCall&, Output&, rvalue<Input> >& wrapper) {
+		void Register(const String& name, const TWrapper<bool, RemoteCall&, Output&, Input&>& wrapper) {
 			requestHandlers[name] = TShared<ResponseBase>::From(new Response<Input, Output>(wrapper));
 		}
+#endif
 
 		template <class Input, class Output>
-		void Call(const TWrapper<void, RemoteCall&, rvalue<Output> >& callback, const String& name, rvalue<Input> input) {
+		void Call(const String& name, rvalue<Input> input, const TWrapper<void, RemoteCall&, rvalue<Output> >& callback) {
 			Session* session = outputSession();
 			assert(session != nullptr);
 			session->requestQueue.Push(TShared<RequestBase>::From(new Request<Input, Output>(name,

@@ -54,7 +54,7 @@ LINK32=link.exe
 # SUBTRACT LINK32 /pdb:none
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
-PostBuild_Cmds=upx                    Release\LostDream.exe                   	copy                    Release\LostDream.exe                    ..\..\..\..\Binary\ 
+PostBuild_Cmds=upx                     Release\LostDream.exe                    	copy                     Release\LostDream.exe                     ..\..\..\..\Binary\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "LostDream - Win32 Debug"
@@ -109,6 +109,10 @@ SOURCE=..\..\..\..\Source\Utility\LostDream\Spatial\Memory.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\..\Source\Utility\LostDream\Reflection\NewRPC.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\..\Source\Utility\LostDream\Spatial\RandomQuery.cpp
 # End Source File
 # Begin Source File
@@ -138,6 +142,10 @@ SOURCE=..\..\..\..\Source\Utility\LostDream\LostDream.h
 # Begin Source File
 
 SOURCE=..\..\..\..\Source\Utility\LostDream\Spatial\Memory.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\..\Source\Utility\LostDream\Reflection\NewRPC.h
 # End Source File
 # Begin Source File
 

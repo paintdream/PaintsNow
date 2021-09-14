@@ -17,8 +17,8 @@ extern "C" int _CrtDbgReport() {
 
 int main(void) {
 	LostDream lostDream;
-	lostDream.RegisterQualifier(WrapFactory(UniqueType<RPC>()), 1);
 	lostDream.RegisterQualifier(WrapFactory(UniqueType<NewRPC>()), 1);
+	lostDream.RegisterQualifier(WrapFactory(UniqueType<RPC>()), 1);
 	lostDream.RegisterQualifier(WrapFactory(UniqueType<Serialization>()), 1);
 	lostDream.RegisterQualifier(WrapFactory(UniqueType<TaskAllocator>()), 1);
 	lostDream.RegisterQualifier(WrapFactory(UniqueType<Memory>()), 1);

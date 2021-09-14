@@ -34,7 +34,6 @@ namespace PaintsNow {
 		bool ActivateConnection(Connection* connection) override = 0;
 		void GetConnectionInfo(Connection* connection, String& from, String& to) override = 0;
 		void Flush(Connection* connection) override = 0;
-		void Wakeup(Connection* connection) override = 0;
 		bool ReadConnection(Connection* connection, void* data, size_t& length) override = 0;
 		bool WriteConnection(Connection* connection, const void* data, size_t& length) override = 0;
 		void DeactivateConnection(Connection* connection) override = 0;
