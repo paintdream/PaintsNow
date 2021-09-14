@@ -6,6 +6,7 @@
 #pragma once
 #include "../LostDream.h"
 #include "RPC.h"
+#include "NewRPC.h"
 #include "Serialization.h"
 #include "Annotation.h"
 

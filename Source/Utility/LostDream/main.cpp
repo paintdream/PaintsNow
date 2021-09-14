@@ -17,11 +17,12 @@ extern "C" int _CrtDbgReport() {
 
 int main(void) {
 	LostDream lostDream;
+	lostDream.RegisterQualifier(WrapFactory(UniqueType<RPC>()), 1);
+	lostDream.RegisterQualifier(WrapFactory(UniqueType<NewRPC>()), 1);
 	lostDream.RegisterQualifier(WrapFactory(UniqueType<Serialization>()), 1);
 	lostDream.RegisterQualifier(WrapFactory(UniqueType<TaskAllocator>()), 1);
 	lostDream.RegisterQualifier(WrapFactory(UniqueType<Memory>()), 1);
 	lostDream.RegisterQualifier(WrapFactory(UniqueType<RandomQuery>()), 12);
-	lostDream.RegisterQualifier(WrapFactory(UniqueType<RPC>()), 1);
 	lostDream.RegisterQualifier(WrapFactory(UniqueType<Annotation>()), 1);
 
 	lostDream.RunQualifiers(true, 0, 4);
