@@ -42,7 +42,21 @@ struct OutputPacket : public TReflected<OutputPacket, IReflectObjectComplex> {
 	std::vector<String> vecValue;
 };
 
-static bool ServerProcess(RemoteCall& remoteCall, OutputPacket& outputPacket, InputPacket& inputPacketParam) {
+static bool ServerProcess(RemoteCall& remoteCall, OutputPacket& outputPacket, InputPacket& inputPacketParam, const TShared<RemoteCall::Context>& context, uint32_t id) {
+	if (rand() % 2 == 0) {
+#if !defined(_MSC_VER) || _MSC_VER > 1200
+		std::thread t([call = &remoteCall, output = std::move(outputPacket), input = std::move(inputPacketParam), id, context]() mutable {
+			MemoryStream ms(0x1000, true);
+			output.fltValue = input.intValue * 10.0f;
+			output.vecValue.emplace_back(input.stringValue + "_async_response");
+			call->Complete(context, id, output, ms);
+		});
+		t.detach();
+		
+		return false;
+#endif
+	}
+
 	InputPacket& inputPacket = inputPacketParam;
 	outputPacket.fltValue = inputPacket.intValue / 10.0f;
 	outputPacket.vecValue.emplace_back(inputPacket.stringValue + "_response");

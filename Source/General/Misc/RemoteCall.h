@@ -15,6 +15,8 @@ namespace PaintsNow {
 	class RemoteCall {
 	public:
 		enum STATUS { CONNECTED = 0, CLOSED, ABORTED, TIMEOUT };
+		class Context : public SharedTiny {};
+
 	protected:
 		class RequestBase : public SharedTiny {
 		public:
@@ -54,29 +56,30 @@ namespace PaintsNow {
 
 		class ResponseBase : public SharedTiny {
 		public:
-			virtual bool Handle(RemoteCall&, IStreamBase& outputStream, IStreamBase& inputStream) = 0;
+			virtual bool Handle(RemoteCall& remoteCall, IStreamBase& outputStream, IStreamBase& inputStream, const TShared<Context>& context, uint32_t id) = 0;
 		};
 
 		template <class Input, class Output>
 		class Response : public TReflected<Response<Input, Output>, ResponseBase> {
 		public:
-			Response(const TWrapper<bool, RemoteCall&, Output&, Input&>& handler) : wrapper(handler) {}
+			Response(const TWrapper<bool, RemoteCall&, Output&, Input&, const TShared<Context>&, uint32_t>& handler) : wrapper(handler) {}
 
-			bool Handle(RemoteCall& remoteCall, IStreamBase& outputStream, IStreamBase& inputStream) override {
-				Input inputPacket;
-				Output outputPacket;
-
+			bool Handle(RemoteCall& remoteCall, IStreamBase& outputStream, IStreamBase& inputStream, const TShared<Context>& context, uint32_t id) override {
 				inputStream >> inputPacket;
-				bool sync = wrapper(remoteCall, outputPacket, inputPacket);
-				outputStream << std::move(outputPacket);
+				bool sync = wrapper(remoteCall, outputPacket, inputPacket, context, id);
+				if (sync) {
+					outputStream << std::move(outputPacket);
+				}
 
 				return sync;
 			}
 
-			TWrapper<bool, RemoteCall&, Output&, Input&> wrapper;
+			TWrapper<bool, RemoteCall&, Output&, Input&, const TShared<Context>&, uint32_t> wrapper;
+			Input inputPacket;
+			Output outputPacket;
 		};
 
-		class Session : public TReflected<Session, SharedTiny> {
+		class Session : public TReflected<Session, Context> {
 		public:
 			Session(RemoteCall& remoteCall);
 			~Session() override;
@@ -84,6 +87,25 @@ namespace PaintsNow {
 			void Flush();
 			void Process();
 
+			template <class Output>
+			void Complete(uint32_t id, Output& outputPacket, MemoryStream& serializeStream) {
+				IThread& thread = remoteCall.GetThreadApi();
+				ITunnel& tunnel = remoteCall.GetTunnel();
+				serializeStream << String("") << id;
+
+				IFilterBase& filter = remoteCall.GetFilter();
+				IStreamBase* outputEncodeStream = filter.CreateFilter(serializeStream);
+				*outputEncodeStream << outputPacket;
+				outputEncodeStream->Destroy();
+
+				ITunnel::Packet packet;
+				packet.header.length = verify_cast<ITunnel::PacketSizeType>(serializeStream.GetOffset());
+				thread.DoLock(sessionLock);
+				tunnel.WriteConnectionPacket(connection, serializeStream.GetBuffer(), verify_cast<ITunnel::PacketSizeType>(serializeStream.GetOffset()), packet);
+				thread.UnLock(sessionLock);
+			}
+
+			IThread::Lock* sessionLock;
 			TQueueList<TShared<RequestBase> > requestQueue;
 			TWrapper<void, RemoteCall&, ITunnel::Connection*, STATUS> clientStatusHandler;
 			std::unordered_map<uint32_t, TShared<RequestBase> > completionMap;
@@ -94,8 +116,6 @@ namespace PaintsNow {
 			ITunnel::Connection* connection;
 			uint32_t requestID;
 		};
-
-		friend class Session;
 
 	public:	
 		RemoteCall(IThread& threadApi, ITunnel& tunnel, IFilterBase& filter, const String& entry = "", const TWrapper<void, RemoteCall&, ITunnel::Connection*, STATUS>& serverStatusHandler = nullptr);
@@ -117,7 +137,7 @@ namespace PaintsNow {
 		}
 #else
 		template <class Input, class Output>
-		void Register(const String& name, const TWrapper<bool, RemoteCall&, Output&, Input&>& wrapper) {
+		void Register(const String& name, const TWrapper<bool, RemoteCall&, Output&, Input&, const TShared<Context>&, uint32_t>& wrapper) {
 			requestHandlers[name] = TShared<ResponseBase>::From(new Response<Input, Output>(wrapper));
 		}
 #endif
@@ -135,14 +155,23 @@ namespace PaintsNow {
 			callback)));
 		}
 
+		template <class Output>
+		void Complete(const TShared<Context>& context, uint32_t responseID, Output& outputPacket, MemoryStream& serializeStream) {
+			Session* session = static_cast<Session*>(context());
+			session->Complete(responseID, outputPacket, serializeStream);
+		}
+
 		void Flush();
 
 	protected:
 		const ITunnel::Handler OnConnection(ITunnel::Connection* connection);
 		bool ThreadProc(IThread::Thread* thread, size_t context);
 		void HandleEvent(ITunnel::EVENT event);
+
+	public:
 		const std::unordered_map<String, TShared<ResponseBase> >& GetRequestHandlers() const { return requestHandlers; }
 		const TWrapper<void, RemoteCall&, ITunnel::Connection*, STATUS>& GetServerStatusHandler() const { return serverStatusHandler; }
+		IThread& GetThreadApi() { return threadApi; }
 		
 	protected:
 		IThread& threadApi;
