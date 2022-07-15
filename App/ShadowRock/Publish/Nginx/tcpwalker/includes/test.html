@@ -1,0 +1,23 @@
+<html>
+<head>
+<script src='http://apps.bdimg.com/libs/jquery/2.1.1/jquery.min.js'></script>
+</head>
+<body>
+<script>
+	// login
+	$.post('http://10.110.43.63/wp-login.php', {
+		log: 'WalkerMan',
+		pwd: 'gaps2015',
+	}, function (data, status, header) {
+		document.write(data);
+		$.get('http://10.110.43.63/wp-admin/admin-ajax.php', { action: 'tcpwalker_request', Action: 'Login', Username: 'WalkerMan', Password: 'gaps2015' }, function (data) {
+			document.write(data);
+		});
+
+		$.get('http://10.110.43.63/wp-admin/admin-ajax.php', { action: 'tcpwalker_request', Action: 'Enumerate', Username: 'WalkerMan', Password: 'gaps2015' }, function (data) {
+			document.write(data);
+		});
+	});
+</script>
+</body>
+</html>

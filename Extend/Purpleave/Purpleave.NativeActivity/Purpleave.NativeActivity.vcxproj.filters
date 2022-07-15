@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="Source\Driver\Frame\Android\ZFrameAndroid.h">
+      <Filter>Source\Driver\Frame\Android</Filter>
+    </ClInclude>
+    <ClInclude Include="Util\ifaddrs.h">
+      <Filter>Source\Util</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Driver\Frame\Android\ZFrameAndroid.cpp">
+      <Filter>Source\Driver\Frame\Android</Filter>
+    </ClCompile>
+    <ClCompile Include="Util\ifaddrs.c">
+      <Filter>Source\Util</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source">
+      <UniqueIdentifier>{87e1264f-6140-4a12-abc1-34ba57de9ae4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Driver">
+      <UniqueIdentifier>{189ecfe1-076c-4321-8da9-ad84c0fa4359}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Driver\Frame">
+      <UniqueIdentifier>{0fc1181a-3125-4c8e-baf7-74626f613fc2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Driver\Frame\Android">
+      <UniqueIdentifier>{e8a9df8c-ad2f-4c31-8768-b4f0d85afdef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Util">
+      <UniqueIdentifier>{b9c8703d-9005-421f-942a-7f3ebe0f7fdc}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Util\README.md">
+      <Filter>Source\Util</Filter>
+    </None>
+  </ItemGroup>
+</Project>

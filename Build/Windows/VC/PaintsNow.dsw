@@ -1,0 +1,209 @@
+Microsoft Developer Studio Workspace File, Format Version 6.00
+# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!
+
+###############################################################################
+
+Project: "BridgeSunset"=.\BridgeSunset\BridgeSunset.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "EchoLegend"=.\EchoLegend\EchoLegend.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "GalaxyWeaver"=.\GalaxyWeaver\GalaxyWeaver.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "HeartVioliner"=.\HeartVioliner\HeartVioliner.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "IceFlow"=.\IceFlow\IceFlow.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "LeavesFlute"=.\LeavesFlute\LeavesFlute.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name PurpleTrail
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name BridgeSunset
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name EchoLegend
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name HeartVioliner
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name MythForest
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name SnowyStream
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name PaintsNow
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name Remembery
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name GalaxyWeaver
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name IceFlow
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "LeavesWing"=.\LeavesWing\LeavesWing.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name LeavesFlute
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "LostDream"=.\LostDream\LostDream.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name LeavesFlute
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "MythForest"=.\MythForest\MythForest.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "PaintsNow"=.\PaintsNow\PaintsNow.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "PurpleTrail"=.\PurpleTrail\PurpleTrail.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "Remembery"=.\Remembery\Remembery.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "SnowyStream"=.\SnowyStream\SnowyStream.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Global:
+
+Package=<5>
+{{{
+}}}
+
+Package=<3>
+{{{
+}}}
+
+###############################################################################
+

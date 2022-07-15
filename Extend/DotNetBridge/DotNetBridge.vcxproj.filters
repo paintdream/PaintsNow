@@ -1,0 +1,222 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Code">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Reference">
+      <UniqueIdentifier>{4095c18b-09ec-4771-bd98-ec5553dca53b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Reference\Interface">
+      <UniqueIdentifier>{a9569cc8-137d-4f20-b487-bb525dc2d5d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Reference\System">
+      <UniqueIdentifier>{f3969b99-1dca-471a-bd68-d06c851ab731}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Reference\Template">
+      <UniqueIdentifier>{639066b2-2762-46d2-8a52-f19723da59c0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DotNetBridge.h">
+      <Filter>Code</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>Code</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IScript.h">
+      <Filter>Reference\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IStreamBase.h">
+      <Filter>Reference\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\ITask.h">
+      <Filter>Reference\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IThread.h">
+      <Filter>Reference\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IType.h">
+      <Filter>Reference\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IArchive.h">
+      <Filter>Reference\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IDevice.h">
+      <Filter>Reference\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IFilterBase.h">
+      <Filter>Reference\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IMemory.h">
+      <Filter>Reference\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IReflect.h">
+      <Filter>Reference\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\StringStream.h">
+      <Filter>Reference\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\Tape.h">
+      <Filter>Reference\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\TaskGraph.h">
+      <Filter>Reference\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\TaskQueue.h">
+      <Filter>Reference\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\ThreadPool.h">
+      <Filter>Reference\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\Tiny.h">
+      <Filter>Reference\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\Graph.h">
+      <Filter>Reference\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\Kernel.h">
+      <Filter>Reference\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\MemoryStream.h">
+      <Filter>Reference\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\ShadowStream.h">
+      <Filter>Reference\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TMatrix.h">
+      <Filter>Reference\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TObject.h">
+      <Filter>Reference\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TPool.h">
+      <Filter>Reference\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TProxy.h">
+      <Filter>Reference\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TQueue.h">
+      <Filter>Reference\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TTagged.h">
+      <Filter>Reference\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TVector.h">
+      <Filter>Reference\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TAlgorithm.h">
+      <Filter>Reference\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TAllocator.h">
+      <Filter>Reference\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TAtomic.h">
+      <Filter>Reference\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TBuffer.h">
+      <Filter>Reference\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TCache.h">
+      <Filter>Reference\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TEvent.h">
+      <Filter>Reference\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TKdTree.h">
+      <Filter>Reference\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TMap.h">
+      <Filter>Reference\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\Quota.h">
+      <Filter>Reference\System</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="DotNetBridge.cpp">
+      <Filter>Code</Filter>
+    </ClCompile>
+    <ClCompile Include="AssemblyInfo.cpp">
+      <Filter>Code</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IStreamBase.cpp">
+      <Filter>Reference\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\ITask.cpp">
+      <Filter>Reference\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IThread.cpp">
+      <Filter>Reference\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IType.cpp">
+      <Filter>Reference\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IArchive.cpp">
+      <Filter>Reference\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IDevice.cpp">
+      <Filter>Reference\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IFilterBase.cpp">
+      <Filter>Reference\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IMemory.cpp">
+      <Filter>Reference\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IReflect.cpp">
+      <Filter>Reference\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IScript.cpp">
+      <Filter>Reference\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\StringStream.cpp">
+      <Filter>Reference\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\Tape.cpp">
+      <Filter>Reference\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\TaskGraph.cpp">
+      <Filter>Reference\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\TaskQueue.cpp">
+      <Filter>Reference\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\ThreadPool.cpp">
+      <Filter>Reference\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\Tiny.cpp">
+      <Filter>Reference\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\Graph.cpp">
+      <Filter>Reference\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\Kernel.cpp">
+      <Filter>Reference\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\MemoryStream.cpp">
+      <Filter>Reference\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\ShadowStream.cpp">
+      <Filter>Reference\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\Quota.cpp">
+      <Filter>Reference\System</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="app.rc">
+      <Filter>Resource</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="app.ico">
+      <Filter>Resource</Filter>
+    </Image>
+  </ItemGroup>
+</Project>
