@@ -35,6 +35,7 @@ public:
 	virtual void OnBeginPrinting(CDC* pDC, CPrintInfo* pInfo);
 	virtual void OnEndPrinting(CDC* pDC, CPrintInfo* pInfo);
 	virtual void OnInitialUpdate(); // called first time after construct
+	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -46,12 +47,17 @@ public:
 #endif
 
 protected:
+	HTREEITEM MakeItemRecursive(PaintsNow::StringView& object, bool addItem);
+
+protected:
+	std::vector<PaintsNow::TQueueList<PaintsNow::RecordData>::const_iterator> m_iterators;
+	std::unordered_map<PaintsNow::StringView, HTREEITEM> m_mapPathToTreeItem;
+	HTREEITEM m_rootTreeItem;
 
 // Generated message map functions
 protected:
 	//{{AFX_MSG(CLeftView)
-		// NOTE - the ClassWizard will add and remove member functions here.
-		//    DO NOT EDIT what you see in these blocks of generated code !
+	afx_msg void OnSelchanged(NMHDR* pNMHDR, LRESULT* pResult);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };

@@ -23,8 +23,8 @@ namespace PaintsNow {
 	class CrossScript : public TReflected<CrossScript, WarpTiny>, public IScript::RequestPool {
 	public:
 		enum {
-			CROSSSCRIPT_TRANSPARENT = TINY_CUSTOM_BEGIN,
-			CROSSSCRIPT_CUSTOM_BEGIN = TINY_CUSTOM_BEGIN << 1
+			CROSSSCRIPT_TRANSPARENT = WARP_CUSTOM_BEGIN,
+			CROSSSCRIPT_CUSTOM_BEGIN = WARP_CUSTOM_BEGIN << 1
 		};
 
 		// Note: CrossScript will take `script` ownership!
@@ -41,9 +41,9 @@ namespace PaintsNow {
 
 	protected:
 		void ScriptUninitialize(IScript::Request& request) override;
-		void PrepareCall(IScript::Request& fromRequest, IScript::Request& toRequest, IScript::Request::Ref callback, const TShared<CrossRoutine>& remoteRoutine, IScript::Request::Arguments& args);
-		void ExecuteCall(IScript::RequestPool* returnPool, IScript::Request& request, IScript::Request::Ref callback, const TShared<CrossRoutine>& remoteRoutine);
-		void CompleteCall(IScript::RequestPool* returnPool, IScript::Request& request, IScript::Request::Ref callback, const TShared<CrossRoutine>& remoteRoutine);
+		virtual void PrepareCall(IScript::Request& fromRequest, IScript::Request& toRequest, IScript::Request::Ref callback, const TShared<CrossRoutine>& remoteRoutine, IScript::Request::Arguments& args);
+		virtual void ExecuteCall(IScript::RequestPool* returnPool, IScript::Request& request, IScript::Request::Ref callback, const TShared<CrossRoutine>& remoteRoutine);
+		virtual void CompleteCall(IScript::RequestPool* returnPool, IScript::Request& request, IScript::Request::Ref callback, const TShared<CrossRoutine>& remoteRoutine);
 		virtual void ErrorHandler(IScript::Request& request, const String& err);
 		virtual void Dispatch(IScript::RequestPool* fromPool, IScript::RequestPool* toPool, ITask* task);
 

@@ -30,6 +30,7 @@ public:
 	virtual BOOL OnPreparePrinting(CPrintInfo* pInfo);
 	virtual void OnBeginPrinting(CDC* pDC, CPrintInfo* pInfo);
 	virtual void OnEndPrinting(CDC* pDC, CPrintInfo* pInfo);
+	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -41,6 +42,7 @@ public:
 #endif
 
 protected:
+	std::vector<PaintsNow::TQueueList<PaintsNow::LogData>::const_iterator> m_iterators;
 
 // Generated message map functions
 protected:

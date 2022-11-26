@@ -2,20 +2,20 @@
 
 [General Info]
 Version=1
-LastClass=CCommandDlg
-LastTemplate=CDialog
+LastClass=CScrypterApp
+LastTemplate=CListView
 NewFileInclude1=#include "stdafx.h"
 NewFileInclude2=#include "Scrypter.h"
 LastPage=0
 
-ClassCount=10
+ClassCount=11
 Class1=CScrypterApp
 Class2=CScrypterDoc
 Class3=CScrypterView
 Class4=CMainFrame
 Class7=CAboutDlg
 
-ResourceCount=6
+ResourceCount=7
 Resource1=IDD_ABOUTBOX
 Resource2=IDR_MAINFRAME
 Resource3=IDR_SCRYPTTYPE
@@ -26,7 +26,9 @@ Resource5=IDR_SCRYPTTYPE (English (U.S.))
 Class8=CMonitorView
 Class9=CLogView
 Class10=CCommandDlg
+Class11=CParameterView
 Resource6=IDR_MAINFRAME (English (U.S.))
+Resource7=IDD_SERVICE (English (U.S.))
 
 [CLS:CScrypterApp]
 Type=0
@@ -42,6 +44,9 @@ Type=0
 HeaderFile=ScrypterDoc.h
 ImplementationFile=ScrypterDoc.cpp
 Filter=N
+LastObject=CScrypterDoc
+BaseClass=CDocument
+VirtualFilter=DC
 
 [CLS:CScrypterView]
 Type=0
@@ -49,6 +54,8 @@ HeaderFile=ScrypterView.h
 ImplementationFile=ScrypterView.cpp
 Filter=C
 LastObject=CScrypterView
+BaseClass=CListView
+VirtualFilter=VWC
 
 
 [CLS:CMainFrame]
@@ -56,7 +63,7 @@ Type=0
 HeaderFile=MainFrm.h
 ImplementationFile=MainFrm.cpp
 Filter=T
-LastObject=CMainFrame
+LastObject=IDC_CONFIG_SERVICE
 BaseClass=CMDIFrameWnd
 VirtualFilter=fWC
 
@@ -75,6 +82,9 @@ Type=0
 HeaderFile=LeftView.h
 ImplementationFile=LeftView.cpp
 Filter=T
+BaseClass=CTreeView
+VirtualFilter=VWC
+LastObject=CLeftView
 
 [CLS:CAboutDlg]
 Type=0
@@ -167,13 +177,16 @@ Command14=ID_PREV_PANE
 [DLG:IDR_MAINFRAME (English (U.S.))]
 Type=1
 Class=?
-ControlCount=6
-Control1=IDC_BROWSE,button,1342242816
-Control2=IDC_GO,button,1342242817
-Control3=IDC_STATIC,static,1342308865
-Control4=IDC_CONFIG,button,1342242816
-Control5=IDC_CONFIG_SCRIPT,edit,1350633600
-Control6=IDC_EXPORT,button,1342242816
+ControlCount=9
+Control1=IDC_PROGRESS,msctls_progress32,1350565888
+Control2=IDC_STATIC,static,1342308865
+Control3=IDC_CONFIG_SCRIPT,edit,1350633600
+Control4=IDC_BROWSE,button,1342242816
+Control5=IDC_GO,button,1342242817
+Control6=IDC_PAUSE,button,1342242816
+Control7=IDC_STOP,button,1342242816
+Control8=IDC_EXPORT,button,1342242816
+Control9=IDC_CLEAR,button,1342242816
 
 [TB:IDR_MAINFRAME (English (U.S.))]
 Type=1
@@ -194,7 +207,7 @@ CommandCount=12
 
 [MNU:IDR_MAINFRAME (English (U.S.))]
 Type=1
-Class=?
+Class=CMainFrame
 Command1=ID_FILE_NEW
 Command2=ID_FILE_OPEN
 Command3=ID_FILE_PRINT_SETUP
@@ -210,8 +223,9 @@ Command12=ID_VIEW_DETAILS
 Command13=ID_VIEW_BYNAME
 Command14=ID_VIEW_AUTOARRANGE
 Command15=ID_VIEW_LINEUP
-Command16=ID_APP_ABOUT
-CommandCount=16
+Command16=IDC_CONFIG_SERVICE
+Command17=ID_APP_ABOUT
+CommandCount=17
 
 [MNU:IDR_SCRYPTTYPE (English (U.S.))]
 Type=1
@@ -282,6 +296,7 @@ ImplementationFile=MonitorView.cpp
 BaseClass=CListView
 Filter=C
 LastObject=CMonitorView
+VirtualFilter=VWC
 
 [CLS:CLogView]
 Type=0
@@ -300,4 +315,27 @@ BaseClass=CDialogBar
 Filter=D
 LastObject=CCommandDlg
 VirtualFilter=dWC
+
+[CLS:CParameterView]
+Type=0
+HeaderFile=ParameterView.h
+ImplementationFile=ParameterView.cpp
+BaseClass=CListView
+Filter=C
+LastObject=CParameterView
+VirtualFilter=VWC
+
+[DLG:IDD_SERVICE (English (U.S.))]
+Type=1
+Class=?
+ControlCount=9
+Control1=IDOK,button,1342242817
+Control2=IDCANCEL,button,1342242816
+Control3=IDC_STATIC,button,1342177287
+Control4=IDC_AS_WINDOWS_SERVICE,button,1342242819
+Control5=IDC_ACCEPT_REQUESTS,button,1342242819
+Control6=IDC_STATIC,static,1342308352
+Control7=IDC_UPSTREAM_ADDRESS,edit,1350631552
+Control8=IDC_STATIC,static,1342308352
+Control9=IDC_MAX_THREADS,edit,1350631552
 

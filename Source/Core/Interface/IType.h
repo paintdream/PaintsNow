@@ -75,12 +75,10 @@ namespace PaintsNow {
 	std::vector<String> Split(const String& str, char sep = ' ');
 
 	class StringView {
-	private:
-		StringView(rvalue<String> str); // not allowed
-
 	public:
 		StringView() : buffer(nullptr), viewSize(0) {}
 		StringView(const String& str) : buffer(str.data()), viewSize(str.size()) {}
+		// StringView(rvalue<String> str) : buffer(str.data()), viewSize(str.size()) {}
 		StringView(const char* str, size_t len) : buffer(str), viewSize(len) {}
 		StringView(const char* str) : buffer(str), viewSize(strlen(str)) {}
 
@@ -93,7 +91,7 @@ namespace PaintsNow {
 		const char* data() const { return buffer; }
 		const char* begin() const { return buffer; }
 		const char* end() const { return buffer + viewSize; }
-		const char* find(const char ch) const { return std::find(buffer, buffer + viewSize, ch); }
+		size_t find(const char ch) const { const char* p = std::find(buffer, buffer + viewSize, ch); return p == buffer + viewSize ? String::npos : p - buffer; }
 		const char operator [] (size_t i) const { assert(i < viewSize); return buffer[i]; }
 
 		bool operator == (const StringView& rhs) const {
@@ -184,8 +182,8 @@ namespace PaintsNow {
 	typedef TQuaternion<float> QuaternionFloat;
 
 #ifdef _WIN32
-	String Utf8ToSystem(const String& str);
-	String SystemToUtf8(const String& str);
+	String Utf8ToSystem(StringView str);
+	String SystemToUtf8(StringView str);
 #else
 #define Utf8ToSystem(f) (f)
 #define SystemToUtf8(f) (f)

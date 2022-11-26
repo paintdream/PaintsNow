@@ -236,7 +236,7 @@ namespace PaintsNow {
 	template <typename T = uint32_t>
 	class TWriteFence {
 	public:
-#if defined(_MSC_VER) && _MSC_VER > 1200
+#if defined(_DEBUG) && defined(_MSC_VER) && _MSC_VER > 1200
 		TWriteFence(std::atomic<T>& var, uint32_t& id) noexcept : variable(var), threadId(id) {
 			Acquire(variable, threadId);
 		}

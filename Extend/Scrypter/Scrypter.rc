@@ -58,13 +58,6 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// 24
-//
-
-1                       24      DISCARDABLE     "XPStyle.manifest"
 #endif    // Chinese (P.R.C.) resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -157,6 +150,10 @@ BEGIN
             MENUITEM "&Auto Arrange",               ID_VIEW_AUTOARRANGE
         END
         MENUITEM "Lin&e up Icons",              ID_VIEW_LINEUP
+    END
+    POPUP "&Configuration"
+    BEGIN
+        MENUITEM "Service ...",                 IDC_CONFIG_SERVICE
     END
     POPUP "&Help"
     BEGIN
@@ -255,7 +252,7 @@ END
 IDD_ABOUTBOX DIALOG DISCARDABLE  0, 0, 235, 55
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About Scrypter"
-FONT 8, "MS Sans Serif"
+FONT 10, "Tahoma"
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,11,17,20,20
     LTEXT           "Scrypter Version 1.0",IDC_STATIC,40,10,119,8,
@@ -264,17 +261,39 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,178,7,50,14,WS_GROUP
 END
 
-IDR_MAINFRAME DIALOG DISCARDABLE  0, 0, 472, 17
+IDR_MAINFRAME DIALOG DISCARDABLE  0, 0, 506, 20
 STYLE WS_CHILD
+FONT 8, "Tahoma"
+BEGIN
+    CONTROL         "Progress1",IDC_PROGRESS,"msctls_progress32",WS_BORDER,0,
+                    2,75,15
+    CTEXT           "Script:",IDC_STATIC,80,1,37,15,SS_CENTERIMAGE
+    EDITTEXT        IDC_CONFIG_SCRIPT,115,2,115,14,ES_AUTOHSCROLL | 
+                    ES_READONLY
+    PUSHBUTTON      "Browse ...",IDC_BROWSE,235,1,40,15
+    DEFPUSHBUTTON   "Go !",IDC_GO,280,1,40,15
+    PUSHBUTTON      "Pause",IDC_PAUSE,325,1,40,15
+    PUSHBUTTON      "Stop",IDC_STOP,370,1,40,15
+    PUSHBUTTON      "Export ...",IDC_EXPORT,415,1,40,15
+    PUSHBUTTON      "Clear",IDC_CLEAR,460,1,40,15
+END
+
+IDD_SERVICE DIALOG DISCARDABLE  0, 0, 179, 103
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Service Configuration"
 FONT 10, "Tahoma"
 BEGIN
-    PUSHBUTTON      "Browse ...",IDC_BROWSE,205,2,64,14
-    DEFPUSHBUTTON   "Go !",IDC_GO,336,2,56,13
-    CTEXT           "Script:",IDC_STATIC,0,2,37,14,SS_CENTERIMAGE
-    PUSHBUTTON      "Config ...",IDC_CONFIG,275,2,56,13
-    EDITTEXT        IDC_CONFIG_SCRIPT,35,3,160,12,ES_AUTOHSCROLL | 
-                    ES_READONLY
-    PUSHBUTTON      "Export ...",IDC_EXPORT,400,2,56,13
+    DEFPUSHBUTTON   "OK",IDOK,35,85,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,95,85,50,14
+    GROUPBOX        "General",IDC_STATIC,5,5,170,75
+    CONTROL         "Register as Windows Service",IDC_AS_WINDOWS_SERVICE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,20,110,10
+    CONTROL         "Accept distrubuted requests",IDC_ACCEPT_REQUESTS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,35,110,10
+    LTEXT           "Upstream address:",IDC_STATIC,10,66,65,10
+    EDITTEXT        IDC_UPSTREAM_ADDRESS,75,65,95,12,ES_AUTOHSCROLL
+    LTEXT           "Max threads:",IDC_STATIC,10,51,50,10
+    EDITTEXT        IDC_MAX_THREADS,75,50,45,12,ES_AUTOHSCROLL
 END
 
 
@@ -343,6 +362,14 @@ BEGIN
     IDR_MAINFRAME, DIALOG
     BEGIN
         BOTTOMMARGIN, 15
+    END
+
+    IDD_SERVICE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 172
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 96
     END
 END
 #endif    // APSTUDIO_INVOKED

@@ -35,9 +35,9 @@ void Weaver::SetConnectionCallback(IScript::Request& request, const IScript::Req
 	ReplaceCallback(request, connectionCallback, ref);
 }
 
-void Weaver::OnConnectionStatus(IScript::Request& request, bool isAuto, RemoteCall::STATUS status, const String & message) {
-	if (status == RemoteCall::CONNECTED || status == RemoteCall::CLOSED || status == RemoteCall::ABORTED) {
-		String code = status == RemoteCall::CONNECTED ? "Connected" : status == RemoteCall::CLOSED ? "Closed" : "Aborted";
+void Weaver::OnConnectionStatus(IScript::Request& request, bool isAuto, ITunnel::EVENT status, const String & message) {
+	if (status == ITunnel::CONNECTED || status == ITunnel::CLOSE || status == ITunnel::ABORT) {
+		String code = status == ITunnel::CONNECTED ? "Connected" : status == ITunnel::CLOSE ? "Closed" : "Aborted";
 		if (connectionCallback) {
 			request.DoLock();
 			request.Push();
@@ -47,7 +47,7 @@ void Weaver::OnConnectionStatus(IScript::Request& request, bool isAuto, RemoteCa
 		}
 	}
 
-	if (status == RemoteCall::CLOSED || status == RemoteCall::ABORTED) {
+	if (status == ITunnel::CLOSE || status == ITunnel::ABORT) {
 		// restart if not manually stopped
 		if (Flag().load(std::memory_order_acquire) & TINY_ACTIVATED) {
 			remoteCall.Reset();
@@ -90,7 +90,7 @@ TObject<IReflect>& Weaver::operator () (IReflect& reflect) {
 	return *this;
 }
 
-bool Weaver::RpcCheckVersion(RemoteCall& remoteCall, ProtoOutputCheckVersion& outputPacket, ProtoInputCheckVersion& inputPacket, const TShared<RemoteCall::Context>& context, uint32_t id) {
+bool Weaver::RpcCheckVersion(RemoteCall& remoteCall, ProtoOutputCheckVersion& outputPacket, rvalue<ProtoInputCheckVersion> inputPacket, const TShared<RemoteCall::Session>& context, uint32_t id) {
 	// Write current version string to output buffer.
 	outputPacket.clientVersion = WEAVER_VERSION;
 
@@ -107,20 +107,21 @@ bool Weaver::RpcCheckVersion(RemoteCall& remoteCall, ProtoOutputCheckVersion& ou
 	return true;
 }
 
-bool Weaver::RpcInitialize(RemoteCall& remoteCall, ProtoOutputInitialize& outputPacket, ProtoInputInitialize& inputPacket, const TShared<RemoteCall::Context>& context, uint32_t id) {
+bool Weaver::RpcInitialize(RemoteCall& remoteCall, ProtoOutputInitialize& outputPacket, rvalue<ProtoInputInitialize> inputPacket, const TShared<RemoteCall::Session>& context, uint32_t id) {
 	return true;
 }
 
-bool Weaver::RpcUninitialize(RemoteCall& remoteCall, ProtoOutputUninitialize& outputPacket, ProtoInputUninitialize& inputPacket, const TShared<RemoteCall::Context>& context, uint32_t id) {
+bool Weaver::RpcUninitialize(RemoteCall& remoteCall, ProtoOutputUninitialize& outputPacket, rvalue<ProtoInputUninitialize> inputPacket, const TShared<RemoteCall::Session>& context, uint32_t id) {
 	return true;
 }
 
-bool Weaver::RpcDebugPrint(RemoteCall& remoteCall, ProtoOutputDebugPrint& outputPacket, ProtoInputDebugPrint& inputPacket, const TShared<RemoteCall::Context>& context, uint32_t id) {
+bool Weaver::RpcDebugPrint(RemoteCall& remoteCall, ProtoOutputDebugPrint& outputPacket, rvalue<ProtoInputDebugPrint> inputPacket, const TShared<RemoteCall::Session>& context, uint32_t id) {
 	if (rpcCallback) {
+		ProtoInputDebugPrint& input = inputPacket;
 		IScript::Request& request = *bridgeSunset.requestPool.AcquireSafe();
 		request.DoLock();
 		request.Push();
-		request.Call(rpcCallback, String("RpcDebugPrint"), inputPacket.text);
+		request.Call(rpcCallback, String("RpcDebugPrint"), input.text);
 		request.Pop();
 		request.UnLock();
 		bridgeSunset.requestPool.ReleaseSafe(&request);
@@ -129,10 +130,11 @@ bool Weaver::RpcDebugPrint(RemoteCall& remoteCall, ProtoOutputDebugPrint& output
 	return true;
 }
 
-bool Weaver::RpcPostResource(RemoteCall& remoteCall, ProtoOutputPostResource& outputPacket, ProtoInputPostResource& inputPacket, const TShared<RemoteCall::Context>& context, uint32_t id) {
-	String& resourceData = inputPacket.resourceData;
-	String& path = inputPacket.location;
-	String& extension = inputPacket.extension;
+bool Weaver::RpcPostResource(RemoteCall& remoteCall, ProtoOutputPostResource& outputPacket, rvalue<ProtoInputPostResource> inputPacket, const TShared<RemoteCall::Session>& context, uint32_t id) {
+	ProtoInputPostResource& input = inputPacket;
+	String& resourceData = input.resourceData;
+	String& path = input.location;
+	String& extension = input.extension;
 
 	bool success = true;
 	// Make memory stream for deserialization
@@ -175,12 +177,13 @@ bool Weaver::RpcPostResource(RemoteCall& remoteCall, ProtoOutputPostResource& ou
 	return true;
 }
 
-bool Weaver::RpcPostEntity(RemoteCall& remoteCall, ProtoOutputPostEntity& outputPacket, ProtoInputPostEntity& inputPacket, const TShared<RemoteCall::Context>& context, uint32_t id) {
+bool Weaver::RpcPostEntity(RemoteCall& remoteCall, ProtoOutputPostEntity& outputPacket, rvalue<ProtoInputPostEntity> inputPacket, const TShared<RemoteCall::Session>& context, uint32_t id) {
 	if (rpcCallback) {
+		ProtoInputPostEntity& input = inputPacket;
 		IScript::Request& request = *bridgeSunset.requestPool.AcquireSafe();
 		request.DoLock();
 		request.Push();
-		request.Call(rpcCallback, String("RpcPostEntity"), inputPacket.entityID, inputPacket.groupID, inputPacket.entityName);
+		request.Call(rpcCallback, String("RpcPostEntity"), input.entityID, input.groupID, input.entityName);
 		request.Pop();
 		request.UnLock();
 		bridgeSunset.requestPool.ReleaseSafe(&request);
@@ -189,12 +192,13 @@ bool Weaver::RpcPostEntity(RemoteCall& remoteCall, ProtoOutputPostEntity& output
 	return true;
 }
 
-bool Weaver::RpcPostEntityGroup(RemoteCall& remoteCall, ProtoOutputPostEntityGroup& outputPacket, ProtoInputPostEntityGroup& inputPacket, const TShared<RemoteCall::Context>& context, uint32_t id) {
+bool Weaver::RpcPostEntityGroup(RemoteCall& remoteCall, ProtoOutputPostEntityGroup& outputPacket, rvalue<ProtoInputPostEntityGroup> inputPacket, const TShared<RemoteCall::Session>& context, uint32_t id) {
 	if (rpcCallback) {
+		ProtoInputPostEntityGroup& input = inputPacket;
 		IScript::Request& request = *bridgeSunset.requestPool.AcquireSafe();
 		request.DoLock();
 		request.Push();
-		request.Call(rpcCallback, String("RpcPostEntityGroup"), inputPacket.groupID, inputPacket.groupName);
+		request.Call(rpcCallback, String("RpcPostEntityGroup"), input.groupID, input.groupName);
 		request.Pop();
 		request.UnLock();
 		bridgeSunset.requestPool.ReleaseSafe(&request);
@@ -203,12 +207,13 @@ bool Weaver::RpcPostEntityGroup(RemoteCall& remoteCall, ProtoOutputPostEntityGro
 	return true;
 }
 
-bool Weaver::RpcPostEntityComponent(RemoteCall& remoteCall, ProtoOutputPostEntityComponent& outputPacket, ProtoInputPostEntityComponent& inputPacket, const TShared<RemoteCall::Context>& context, uint32_t id) {
+bool Weaver::RpcPostEntityComponent(RemoteCall& remoteCall, ProtoOutputPostEntityComponent& outputPacket, rvalue<ProtoInputPostEntityComponent> inputPacket, const TShared<RemoteCall::Session>& context, uint32_t id) {
 	if (rpcCallback) {
+		ProtoInputPostEntityComponent& input = inputPacket;
 		IScript::Request& request = *bridgeSunset.requestPool.AcquireSafe();
 		request.DoLock();
 		request.Push();
-		request.Call(rpcCallback, String("RpcPostEntityComponent"), inputPacket.entityID, inputPacket.componentID);
+		request.Call(rpcCallback, String("RpcPostEntityComponent"), input.entityID, input.componentID);
 		request.Pop();
 		request.UnLock();
 		bridgeSunset.requestPool.ReleaseSafe(&request);
@@ -217,12 +222,13 @@ bool Weaver::RpcPostEntityComponent(RemoteCall& remoteCall, ProtoOutputPostEntit
 	return true;
 }
 
-bool Weaver::RpcPostModelComponent(RemoteCall& remoteCall, ProtoOutputPostModelComponent& outputPacket, ProtoInputPostModelComponent& inputPacket, const TShared<RemoteCall::Context>& context, uint32_t id) {
+bool Weaver::RpcPostModelComponent(RemoteCall& remoteCall, ProtoOutputPostModelComponent& outputPacket, rvalue<ProtoInputPostModelComponent> inputPacket, const TShared<RemoteCall::Session>& context, uint32_t id) {
 	if (rpcCallback) {
+		ProtoInputPostModelComponent& input = inputPacket;
 		IScript::Request& request = *bridgeSunset.requestPool.AcquireSafe();
 		request.DoLock();
 		request.Push();
-		request.Call(rpcCallback, String("RpcPostModelComponent"), inputPacket.componentID, inputPacket.meshResource, inputPacket.viewDistance);
+		request.Call(rpcCallback, String("RpcPostModelComponent"), input.componentID, input.meshResource, input.viewDistance);
 		request.Pop();
 		request.UnLock();
 		bridgeSunset.requestPool.ReleaseSafe(&request);
@@ -231,13 +237,13 @@ bool Weaver::RpcPostModelComponent(RemoteCall& remoteCall, ProtoOutputPostModelC
 	return true;
 }
 
-bool Weaver::RpcPostModelComponentMaterial(RemoteCall& remoteCall, ProtoOutputPostModelComponentMaterial& outputPacket, ProtoInputPostModelComponentMaterial& inputPacket, const TShared<RemoteCall::Context>& context, uint32_t id) {
-	
+bool Weaver::RpcPostModelComponentMaterial(RemoteCall& remoteCall, ProtoOutputPostModelComponentMaterial& outputPacket, rvalue<ProtoInputPostModelComponentMaterial> inputPacket, const TShared<RemoteCall::Session>& context, uint32_t id) {
 	if (rpcCallback) {
+		ProtoInputPostModelComponentMaterial& input = inputPacket;
 		IScript::Request& request = *bridgeSunset.requestPool.AcquireSafe();
 		request.DoLock();
 		request.Push();
-		request.Call(rpcCallback, String("RpcPostModelComponentMaterial"), inputPacket.componentID, inputPacket.meshGroupID, inputPacket.materialResource);
+		request.Call(rpcCallback, String("RpcPostModelComponentMaterial"), input.componentID, input.meshGroupID, input.materialResource);
 		request.Pop();
 		request.UnLock();
 		bridgeSunset.requestPool.ReleaseSafe(&request);
@@ -246,12 +252,13 @@ bool Weaver::RpcPostModelComponentMaterial(RemoteCall& remoteCall, ProtoOutputPo
 	return true;
 }
 
-bool Weaver::RpcPostTransformComponent(RemoteCall& remoteCall, ProtoOutputPostTransformComponent& outputPacket, ProtoInputPostTransformComponent& inputPacket, const TShared<RemoteCall::Context>& context, uint32_t id) {	
+bool Weaver::RpcPostTransformComponent(RemoteCall& remoteCall, ProtoOutputPostTransformComponent& outputPacket, rvalue<ProtoInputPostTransformComponent> inputPacket, const TShared<RemoteCall::Session>& context, uint32_t id) {	
 	if (rpcCallback) {
+		ProtoInputPostTransformComponent& input = inputPacket;
 		IScript::Request& request = *bridgeSunset.requestPool.AcquireSafe();
 		request.DoLock();
 		request.Push();
-		request.Call(rpcCallback, String("RpcPostTransformComponent"), inputPacket.componentID, inputPacket.position, inputPacket.scale, inputPacket.rotation);
+		request.Call(rpcCallback, String("RpcPostTransformComponent"), input.componentID, input.position, input.scale, input.rotation);
 		request.Pop();
 		request.UnLock();
 		bridgeSunset.requestPool.ReleaseSafe(&request);
@@ -260,12 +267,13 @@ bool Weaver::RpcPostTransformComponent(RemoteCall& remoteCall, ProtoOutputPostTr
 	return true;
 }
 
-bool Weaver::RpcPostSpaceComponent(RemoteCall& remoteCall, ProtoOutputPostSpaceComponent& outputPacket, ProtoInputPostSpaceComponent& inputPacket, const TShared<RemoteCall::Context>& context, uint32_t id) {
+bool Weaver::RpcPostSpaceComponent(RemoteCall& remoteCall, ProtoOutputPostSpaceComponent& outputPacket, rvalue<ProtoInputPostSpaceComponent> inputPacket, const TShared<RemoteCall::Session>& context, uint32_t id) {
 	if (rpcCallback) {
+		ProtoInputPostSpaceComponent& input = inputPacket;
 		IScript::Request& request = *bridgeSunset.requestPool.AcquireSafe();
 		request.DoLock();
 		request.Push();
-		request.Call(rpcCallback, String("RpcPostSpaceComponent"), inputPacket.componentID, inputPacket.groupID);
+		request.Call(rpcCallback, String("RpcPostSpaceComponent"), input.componentID, input.groupID);
 		request.Pop();
 		request.UnLock();
 		bridgeSunset.requestPool.ReleaseSafe(&request);
@@ -274,12 +282,13 @@ bool Weaver::RpcPostSpaceComponent(RemoteCall& remoteCall, ProtoOutputPostSpaceC
 	return true;
 }
 
-bool Weaver::RpcPostEnvCubeComponent(RemoteCall& remoteCall, ProtoOutputPostEnvCubeComponent& outputPacket, ProtoInputPostEnvCubeComponent& inputPacket, const TShared<RemoteCall::Context>& context, uint32_t id) {
+bool Weaver::RpcPostEnvCubeComponent(RemoteCall& remoteCall, ProtoOutputPostEnvCubeComponent& outputPacket, rvalue<ProtoInputPostEnvCubeComponent> inputPacket, const TShared<RemoteCall::Session>& context, uint32_t id) {
 	if (rpcCallback) {
+		ProtoInputPostEnvCubeComponent& input = inputPacket;
 		IScript::Request& request = *bridgeSunset.requestPool.AcquireSafe();
 		request.DoLock();
 		request.Push();
-		request.Call(rpcCallback, String("RpcPostEnvCubeComponent"), inputPacket.componentID, inputPacket.texturePath);
+		request.Call(rpcCallback, String("RpcPostEnvCubeComponent"), input.componentID, input.texturePath);
 		request.Pop();
 		request.UnLock();
 		bridgeSunset.requestPool.ReleaseSafe(&request);
@@ -288,8 +297,9 @@ bool Weaver::RpcPostEnvCubeComponent(RemoteCall& remoteCall, ProtoOutputPostEnvC
 	return true;
 }
 
-bool Weaver::RpcComplete(RemoteCall& remoteCall, ProtoOutputComplete& outputPacket, ProtoInputComplete& inputPacket, const TShared<RemoteCall::Context>& context, uint32_t id) {
+bool Weaver::RpcComplete(RemoteCall& remoteCall, ProtoOutputComplete& outputPacket, rvalue<ProtoInputComplete> inputPacket, const TShared<RemoteCall::Session>& context, uint32_t id) {
 	if (rpcCallback) {
+		// ProtoInputComplete& input = inputPacket;
 		IScript::Request& request = *bridgeSunset.requestPool.AcquireSafe();
 		request.DoLock();
 		request.Push();

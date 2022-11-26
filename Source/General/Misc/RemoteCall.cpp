@@ -1,5 +1,4 @@
 #include "RemoteCall.h"
-#include "../../Core/Driver/Profiler/Optick/optick.h"
 using namespace PaintsNow;
 
 const size_t CHUNK_SIZE = 0x1000;
@@ -39,18 +38,16 @@ void RemoteCall::Session::Flush() {
 	tunnel.Flush(connection);
 }
 
-void RemoteCall::Session::HandleEvent(ITunnel::Connection*, ITunnel::EVENT event) {
-	ITunnel& tunnel = remoteCall.GetTunnel();
-	const TWrapper<void, RemoteCall&, ITunnel::Connection*, STATUS>& statusHandler = clientStatusHandler ? clientStatusHandler : remoteCall.GetServerStatusHandler();
+ITunnel::Connection* RemoteCall::Session::GetConnection() const {
+	return connection;
+}
+
+void RemoteCall::Session::HandleEvent(ITunnel::Connection* connection, ITunnel::EVENT event) {
 	// { CONNECTED, TIMEOUT, READ, WRITE, CLOSE, ERROR }
 	switch (event) {
 		case ITunnel::CONNECTED:
-			if (statusHandler)
-				statusHandler(remoteCall, connection, RemoteCall::CONNECTED);
 			break;
 		case ITunnel::TIMEOUT:
-			if (statusHandler)
-				statusHandler(remoteCall, connection, RemoteCall::TIMEOUT);
 			break;
 		case ITunnel::READ:
 			// Handle for new call
@@ -61,16 +58,9 @@ void RemoteCall::Session::HandleEvent(ITunnel::Connection*, ITunnel::EVENT event
 			break;
 		case ITunnel::CLOSE:
 		case ITunnel::ABORT:
-			if (statusHandler) {
-				if (event == ITunnel::CLOSE) {
-					statusHandler(remoteCall, connection, RemoteCall::CLOSED);
-				} else {
-					statusHandler(remoteCall, connection, RemoteCall::ABORTED);
-				}
-			}
-
-			tunnel.CloseConnection(connection);
-			connection = nullptr;
+			remoteCall.GetTunnel().CloseConnection(connection);
+			this->connection = nullptr;
+			remoteCall.RemoveSession(this);
 			break;
 		case ITunnel::AWAKE:
 			Flush();
@@ -78,6 +68,10 @@ void RemoteCall::Session::HandleEvent(ITunnel::Connection*, ITunnel::EVENT event
 		case ITunnel::CUSTOM:
 			break;
 	}
+}
+
+bool RemoteCall::Session::IsPassive() const {
+	return !!(Flag().load(std::memory_order_relaxed) & SESSION_PASSIVE_CONNECTION);
 }
 
 void RemoteCall::Session::Process() {
@@ -140,14 +134,11 @@ void RemoteCall::Session::Process() {
 	tunnel.Flush(connection);
 }
 
-RemoteCall::RemoteCall(IThread& thread, ITunnel& t, IFilterBase& f, const String& e, const TWrapper<void, RemoteCall&, ITunnel::Connection*, STATUS>& sh) : threadApi(thread), tunnel(t), filter(f), entry(e), serverStatusHandler(sh), dispatcher(nullptr), currentResponseID(0) {
+RemoteCall::RemoteCall(IThread& thread, ITunnel& t, IFilterBase& f, const String& e) : threadApi(thread), tunnel(t), filter(f), entry(e), dispatcher(nullptr), currentResponseID(0) {
 	dispThread.store(nullptr, std::memory_order_release);
 }
 
 void RemoteCall::Stop() {
-	outputSession = nullptr;
-	inputSessions.clear();
-
 	if (dispatcher != nullptr) {
 		tunnel.DeactivateDispatcher(dispatcher);
 
@@ -167,20 +158,17 @@ RemoteCall::~RemoteCall() {
 	}
 }
 
-void RemoteCall::Connect(const TWrapper<void, RemoteCall&, ITunnel::Connection*, STATUS>& clientStatusHandler, const String& target) {
+TShared<RemoteCall::Session> RemoteCall::Connect(const String& target) {
 	assert(dispatcher != nullptr);
 
-	TShared<Session> session = TShared<Session>::From(new Session(*this));
-	session->clientStatusHandler = clientStatusHandler;
+	TShared<Session> session = CreateSession();
 	session->connection = tunnel.OpenConnection(dispatcher, Wrap(session(), &Session::HandleEvent), target);
 	tunnel.ActivateConnection(session->connection);
 
-	outputSession = session;
+	return session;
 }
 
 bool RemoteCall::ThreadProc(IThread::Thread* thread, size_t context) {
-	OPTICK_THREAD("Network RemoteCall");
-
 	ITunnel::Dispatcher* disp = dispatcher;
 	ITunnel::Listener* listener = nullptr;
 
@@ -210,12 +198,8 @@ bool RemoteCall::ThreadProc(IThread::Thread* thread, size_t context) {
 	return false;
 }
 
-void RemoteCall::Flush() {
-	assert(outputSession);
-	outputSession->Flush();
-}
-
-void RemoteCall::HandleEvent(ITunnel::Listener*, ITunnel::EVENT event) {}
+// empty implementation by default
+void RemoteCall::HandleEvent(ITunnel::Listener* listener, ITunnel::EVENT event) {}
 
 void RemoteCall::Reset() {
 	Stop();
@@ -238,11 +222,24 @@ void RemoteCall::RegisterByResponse(const String& name, const TShared<ResponseBa
 }
 
 const TWrapper<void, ITunnel::Connection*, ITunnel::EVENT> RemoteCall::OnConnection(ITunnel::Connection* connection) {
-	TShared<Session> session = TShared<Session>::From(new Session(*this));
+	TShared<Session> session = CreateSession();
 	session->connection = connection;
+	session->Flag().fetch_or(Session::SESSION_PASSIVE_CONNECTION, std::memory_order_relaxed);
+	AddSession(session);
 
-	BinaryInsert(inputSessions, session);
 	return Wrap(session(), &Session::HandleEvent);
+}
+
+TShared<RemoteCall::Session> RemoteCall::CreateSession() {
+	return TShared<RemoteCall::Session>::From(new Session(*this));
+}
+
+void RemoteCall::AddSession(const TShared<Session>& session) {
+	BinaryInsert(sessionHolders, session);
+}
+
+void RemoteCall::RemoveSession(const TShared<Session>& session) {
+	BinaryErase(sessionHolders, session);
 }
 
 class RemoteCallRegistar : public IReflect {

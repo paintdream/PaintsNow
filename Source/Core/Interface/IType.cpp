@@ -40,7 +40,7 @@ namespace PaintsNow {
 #endif
 
 #ifdef _WIN32
-	String Utf8ToSystem(const String& str) {
+	String Utf8ToSystem(StringView str) {
 		DWORD dwMinSize;
 		dwMinSize = ::MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), nullptr, 0);
 		String ret;
@@ -49,7 +49,7 @@ namespace PaintsNow {
 		return ret;
 	}
 
-	String SystemToUtf8(const String& str) {
+	String SystemToUtf8(StringView str) {
 		DWORD dwMinSize;
 		dwMinSize = ::WideCharToMultiByte(CP_UTF8, 0, (const WCHAR*)str.data(), (int)str.size() / sizeof(WCHAR), nullptr, 0, nullptr, nullptr);
 		String ret;

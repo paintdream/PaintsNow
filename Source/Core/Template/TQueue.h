@@ -676,6 +676,8 @@ namespace PaintsNow {
 			typedef T* pointer;
 			typedef std::forward_iterator_tag iterator_category;
 
+			// just for trivially construct
+			Iterator() {}
 			Iterator(Node* n, uint32_t t) : p(n), it(t) {}
 			Iterator& operator ++ () {
 				it = Node::StepCounter(it, 1);
@@ -690,6 +692,12 @@ namespace PaintsNow {
 				return *this;
 			}
 
+			Iterator& operator = (const Iterator& rhs) {
+				p = rhs.p;
+				it = rhs.it;
+				return *this;
+			}
+
 			Iterator& operator += (uint32_t count) {
 				Iterator p = *this + count;
 				*this = std::move(p);
@@ -698,7 +706,7 @@ namespace PaintsNow {
 
 			Iterator operator + (uint32_t count) const {
 				Node* n = p;
-				size_t sub = it;
+				uint32_t sub = it;
 				while (true) {
 					uint32_t c = (uint32_t)Node::DiffCounter(n->End(), sub);
 					if (count >= c) {
@@ -779,7 +787,9 @@ namespace PaintsNow {
 			typedef const T* pointer;
 			typedef std::forward_iterator_tag iterator_category;
 
-			ConstIterator(Node* n, uint32_t t) : p(n), it(t) {}
+			// just for trivially construct
+			ConstIterator() {}
+			ConstIterator(const Node* n, uint32_t t) : p(n), it(t) {}
 			ConstIterator(const Iterator& rhs) : p(rhs.p), it(rhs.it) {}
 			ConstIterator& operator ++ () {
 				it = Node::StepCounter(it, 1);
@@ -791,6 +801,12 @@ namespace PaintsNow {
 					}
 				}
 
+				return *this;
+			}
+
+			ConstIterator& operator = (const ConstIterator& rhs) {
+				p = rhs.p;
+				it = rhs.it;
 				return *this;
 			}
 

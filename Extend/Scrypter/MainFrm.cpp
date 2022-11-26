@@ -5,6 +5,7 @@
 #include "Scrypter.h"
 
 #include "MainFrm.h"
+#include "ScrypterDoc.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -19,8 +20,7 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWnd)
 
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 	//{{AFX_MSG_MAP(CMainFrame)
-		// NOTE - the ClassWizard will add and remove mapping macros here.
-		//    DO NOT EDIT what you see in these blocks of generated code !
+	ON_MESSAGE(WM_UPDATE_ALLVIEWS, OnUpdateAllViews)
 	ON_WM_CREATE()
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
@@ -33,6 +33,7 @@ static UINT indicators[] =
 	ID_INDICATOR_SCRL,
 };
 
+using namespace PaintsNow;
 /////////////////////////////////////////////////////////////////////////////
 // CMainFrame construction/destruction
 
@@ -64,7 +65,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	if (CMDIFrameWnd::OnCreate(lpCreateStruct) == -1)
 		return -1;
-	
+
 	if (!m_wndToolBar.CreateEx(this) ||
 		!m_wndToolBar.LoadToolBar(IDR_MAINFRAME))
 	{
@@ -156,3 +157,31 @@ CDocument* CMainFrame::GetMDIActiveDocument()
 	return view == nullptr ? nullptr : view->GetDocument();
 }
 
+LRESULT CMainFrame::OnUpdateAllViews(WPARAM wParam, LPARAM lParam)
+{
+	CMainFrame* mainFrame = static_cast<CMainFrame*>(AfxGetApp()->GetMainWnd());
+	CScrypterDoc* document = reinterpret_cast<CScrypterDoc*>(lParam);
+	mainFrame->m_wndDlgBar.UpdateProgressBar(document);
+	document->UpdateAllViews(nullptr, UPDATEVIEW_REFRESH);
+
+	const TCHAR* status = _T("Ready");
+	switch (document->m_document->GetStatus())
+	{
+	case Document::DOCUMENT_IDLE:
+		status = _T("Ready");
+		break;
+	case Document::DOCUMENT_EXECUTING:
+		status = _T("Running");
+		break;
+	case Document::DOCUMENT_EXTERNAL_LOCKING:
+		status = _T("Busy");
+		break;
+	case Document::DOCUMENT_ERROR:
+		status = _T("Error!");
+		break;
+	}
+
+	m_wndStatusBar.SetWindowText(status);
+	document->CompleteDocumentUpdated();
+	return 0;
+}

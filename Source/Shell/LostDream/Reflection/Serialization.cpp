@@ -244,6 +244,34 @@ public:
 	int c;
 };
 
+struct ParameterData final : public TReflected<ParameterData, IReflectObjectComplex> {
+	TObject<IReflect>& operator () (IReflect& reflect) override {
+		BaseClass::operator () (reflect);
+		if (reflect.IsReflectProperty()) {
+			ReflectProperty(description);
+		}
+
+		return *this;
+	}
+
+	String description;
+};
+
+struct Document : public TReflected<Document, IReflectObjectComplex> {
+	TObject<IReflect>& operator () (IReflect& reflect) {
+		BaseClass::operator () (reflect);
+		if (reflect.IsReflectProperty()) {
+			ReflectProperty(pluginPath);
+			ReflectProperty(parameters);
+		}
+
+		return *this;
+	}
+
+	String pluginPath;
+	std::vector<ParameterData> parameters;
+};
+
 bool Serialization::Run(int randomSeed, int length) {
 	C c;
 	IReflectObject& pc = c;
@@ -303,6 +331,21 @@ bool Serialization::Run(int randomSeed, int length) {
 
 	MemoryStream stream(0x1000);
 	ZFilterPod pod;
+
+	Document doc;
+	doc.pluginPath = "../script/datahunter.lua";
+	ParameterData param;
+	param.description = "desc";
+	doc.parameters.push_back(std::move(param));
+	IStreamBase* ft = pod.CreateFilter(stream);
+	*ft << doc;
+	ft->Destroy();
+	stream.Seek(IStreamBase::BEGIN, 0);
+	ft = pod.CreateFilter(stream);
+	Document wdoc;
+	*ft >> wdoc;
+	ft->Destroy();
+
 
 #define USE_FILTER
 

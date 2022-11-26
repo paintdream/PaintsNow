@@ -28,15 +28,6 @@ typedef struct {
 
 #pragma pack(pop)
 
-typedef struct tagPodNode {
-	struct tagPodNode* next;
-	Pod* pod;
-} PodNode;
-
-struct tagPodRoot {
-	PodNode* head;
-};
-
 static int IsStdEndian();
 static void ReverseBytes(void* buffer, uint32_t size);
 static void InsertPodList(Pod* type, PodList* pl);
@@ -196,6 +187,7 @@ static void InsertPodList(Pod* type, PodList* pl) {
 
 	if (q == NULL) {
 		pl->front = pl->next = pl;
+		/* printf("Insert Pod: %s\n", pl->field.name); */
 		type->subList = pl;
 	} else {
 		q->front->next = pl;
@@ -259,7 +251,7 @@ static int ReadData(const PodList* p, const PodStream* stream, void* base, void*
 				if ((status = ReadStream(stream, buf, GetSize(p), p->field.isInteger, context)) != POD_SUCCESS)
 					return status;
 			} else {
-				/* printf("Read %s at offset %p\n", p->name, (uint32_t)TellStream(stream, context)); */
+				/* printf("Read %s at offset %p\n", p->field.name, (uint32_t)TellStream(stream, context)); */
 				iterator = NULL;
 				if ((status = ReadStream(stream, &size, sizeof(size), 1, context)) != POD_SUCCESS)
 					return status;
@@ -510,7 +502,7 @@ static int WriteData(const PodList* p, const PodStream* stream, const void* base
 				if ((status = WriteStream(stream, buf, GetSize(p), p->field.isInteger, context)) != POD_SUCCESS)
 					return status;
 			} else {
-				/* printf("Write %s at offset %p\n", p->name, (uint32_t)TellStream(stream, context)); */
+				/* printf("Write %s at offset %p\n", p->field.name, (uint32_t)TellStream(stream, context)); */
 				iterator = NULL;
 				t = p->node;
 				metaLength = MAX_META_LENGTH;

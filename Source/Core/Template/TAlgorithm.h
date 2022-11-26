@@ -200,21 +200,21 @@ namespace PaintsNow {
 	template <class I, class D, class P>
 	I BinaryFind(I begin, I end, const D& value, const P& pred) {
 		if (begin == end) return end;
-		I it = lower_bound(begin, end, CastKeyValue(value, &*begin), pred);
+		I it = std::lower_bound(begin, end, CastKeyValue(value, &*begin), pred);
 		return it != end && !pred(CastKeyValue(value, &*begin), *it) ? it : end;
 	}
 
 	template <class I, class D>
 	I BinaryFind(I begin, I end, const D& value) {
 		if (begin == end) return end;
-		I it = lower_bound(begin, end, CastKeyValue(value, &*begin));
+		I it = std::lower_bound(begin, end, CastKeyValue(value, &*begin));
 		return it != end && !(CastKeyValue(value, &*begin) < *it) ? it : end;
 	}
 
 #if defined(_MSC_VER) && _MSC_VER <= 1200
 	template <class T, class D, class P>
 	typename T::iterator BinaryInsert(T& container, rvalue<D> value, const P& pred) {
-		typename T::iterator it = upper_bound(container.begin(), container.end(), (typename T::value_type)value, pred);
+		typename T::iterator it = std::upper_bound(container.begin(), container.end(), (typename T::value_type)value, pred);
 		typename T::iterator ip = it;
 		if (it != container.begin() && !pred(*--ip, (typename T::value_type)value)) {
 			*ip = std::move(value);
@@ -226,7 +226,7 @@ namespace PaintsNow {
 
 	template <class T, class D, class P>
 	typename T::iterator BinaryInsert(T& container, const D& value, const P& pred) {
-		typename T::iterator it = upper_bound(container.begin(), container.end(), (typename T::value_type)value, pred);
+		typename T::iterator it = std::upper_bound(container.begin(), container.end(), (typename T::value_type)value, pred);
 		typename T::iterator ip = it;
 		if (it != container.begin() && !pred(*--ip, (typename T::value_type)value)) {
 			*ip = value;
@@ -238,7 +238,7 @@ namespace PaintsNow {
 
 	template <class T, class D>
 	typename T::iterator BinaryInsert(T& container, const D& value) {
-		typename T::iterator it = upper_bound(container.begin(), container.end(), (typename T::value_type)value);
+		typename T::iterator it = std::upper_bound(container.begin(), container.end(), (typename T::value_type)value);
 		typename T::iterator ip = it;
 		if (it != container.begin() && !(*--ip < (typename T::value_type)value)) {
 			*ip = value;
@@ -250,7 +250,7 @@ namespace PaintsNow {
 #else
 	template <class T, class D, class P>
 	typename T::iterator BinaryInsert(T& container, D&& value, const P& pred) {
-		typename T::iterator it = upper_bound(container.begin(), container.end(), (typename T::value_type)value, pred);
+		typename T::iterator it = std::upper_bound(container.begin(), container.end(), (typename T::value_type)value, pred);
 		typename T::iterator ip = it;
 		if (it != container.begin() && !pred(*--ip, (typename T::value_type)value)) {
 			*ip = std::forward<D>(value);
@@ -262,7 +262,7 @@ namespace PaintsNow {
 
 	template <class T, class D>
 	typename T::iterator BinaryInsert(T& container, D&& value) {
-		typename T::iterator it = upper_bound(container.begin(), container.end(), (typename T::value_type)value);
+		typename T::iterator it = std::upper_bound(container.begin(), container.end(), (typename T::value_type)value);
 		typename T::iterator ip = it;
 		if (it != container.begin() && !(*--ip < (typename T::value_type)value)) {
 			*ip = std::forward<D>(value);
@@ -274,7 +274,7 @@ namespace PaintsNow {
 #endif
 	template <class T, class D, class P>
 	bool BinaryErase(T& container, const D& value, const P& pred) {
-		typename T::iterator it = upper_bound(container.begin(), container.end(), (typename T::value_type)value, pred);
+		typename T::iterator it = std::upper_bound(container.begin(), container.end(), (typename T::value_type)value, pred);
 		typename T::iterator ip = it;
 		if (it != container.begin() && !pred(*--ip, (typename T::value_type)value)) {
 			container.erase(ip);
@@ -286,7 +286,7 @@ namespace PaintsNow {
 
 	template <class T, class D>
 	bool BinaryErase(T& container, const D& value) {
-		typename T::iterator it = upper_bound(container.begin(), container.end(), (typename T::value_type)value);
+		typename T::iterator it = std::upper_bound(container.begin(), container.end(), (typename T::value_type)value);
 		typename T::iterator ip = it;
 		if (it != container.begin() && !(*--ip < (typename T::value_type)value)) {
 			container.erase(ip);

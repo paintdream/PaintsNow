@@ -22,7 +22,9 @@ void CrossRoutine::Clear() {
 }
 
 void CrossRoutine::ScriptUninitialize(IScript::Request& request) {
+	request.UnLock();
 	SharedTiny::ScriptUninitialize(request);
+	request.DoLock();
 }
 
 static void SysCall(IScript::Request& request, IScript::Delegate<CrossRoutine> routine, IScript::Request::Arguments& args) {
@@ -42,8 +44,6 @@ static void SysCallAsync(IScript::Request& request, IScript::Request::Ref callba
 CrossScript::CrossScript(ThreadPool& e, IScript& script) : RequestPool(script, e.GetThreadCount()), threadPool(e) {
 	script.DoLock();
 	IScript::Request& request = script.GetDefaultRequest();
-	request << global << key("io") << nil << endtable;
-	request << global << key("os") << nil << endtable;
 	request << global << key("SysCall") << request.Adapt(Wrap(SysCall));
 	request << global << key("SysCallAsync") << request.Adapt(Wrap(SysCallAsync));
 	script.SetErrorHandler(Wrap(this, &CrossScript::ErrorHandler));
@@ -267,7 +267,10 @@ static void CopyTable(uint32_t flag, IScript::Request& request, IScript::Request
 
 void CrossScript::Call(IScript::Request& fromRequest, const TShared<CrossRoutine>& remoteRoutine, IScript::Request::Arguments& args) {
 	// self call
+	fromRequest.DoLock();
 	bool selfCall = fromRequest.GetRequestPool() == remoteRoutine->pool;
+	fromRequest.UnLock();
+
 	if (remoteRoutine->pool == this && remoteRoutine->ref) {
 		IScript::Request& toRequest = *requestPool.AcquireSafe();
 		toRequest.DoLock();
@@ -275,7 +278,7 @@ void CrossScript::Call(IScript::Request& fromRequest, const TShared<CrossRoutine
 			fromRequest.DoLock();
 
 		toRequest.Push();
-		uint32_t flag = selfCall ? 0 : Flag().load(std::memory_order_relaxed);
+		uint32_t flag = Flag().load(std::memory_order_relaxed);
 		// read remaining parameters
 		for (size_t i = 0; i < args.count; i++) {
 			CopyVariable(flag, toRequest, fromRequest, fromRequest.GetCurrentType());
@@ -378,6 +381,7 @@ bool CrossScript::TryCallAsync(IScript::Request& fromRequest, IScript::Request::
 			return true;
 		} else {
 			fromRequest.UnLock();
+			requestPool.ReleaseSafe(&toRequest);
 			return false;
 		}
 	} else {

@@ -20,7 +20,6 @@ typedef unsigned long uint32_t;
 #define MAX_TYPENAME_LENGTH 510
 #define MAX_META_LENGTH (MAX_TYPENAME_LENGTH - 1)
 
-typedef struct tagPodRoot PodRoot;
 typedef struct tagPodStream PodStream;
 typedef uint32_t PodSize;
 
@@ -63,6 +62,17 @@ typedef struct tagPod {
 	void* locateContext;
 	uint8_t id[MAX_TYPENAME_LENGTH];
 } Pod;
+
+typedef struct tagPodNode {
+	struct tagPodNode* next;
+	Pod* pod;
+} PodNode;
+
+struct tagPodRoot {
+	PodNode* head;
+};
+
+typedef struct tagPodRoot PodRoot;
 
 /* stream structure defination, you can put your custom handler here */
 typedef struct tagPodStream {

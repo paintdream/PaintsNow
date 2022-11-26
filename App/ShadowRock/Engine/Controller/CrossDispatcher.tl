@@ -56,7 +56,7 @@ function CrossDispatcher.New(warpBinding : number | { number }) : CrossDispatche
 	]]
 
 	for i, warpIndex in ipairs(warps) do
-		local crossScript = CrossScriptModule.New(true) -- use transparent mode
+		local crossScript = CrossScriptModule.New(true, false) -- use transparent mode
 		table.insert(scriptPool, crossScript)
 		table.insert(setups, crossScript:Load(setupEnvironment))
 	end

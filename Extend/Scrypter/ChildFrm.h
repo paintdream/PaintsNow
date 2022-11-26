@@ -20,6 +20,8 @@ public:
 // Attributes
 protected:
 	CSplitterWnd m_wndSplitter;
+	CSplitterWnd m_wndSplitterUtility;
+	CSplitterWnd m_wndSplitterContent;
 public:
 
 // Operations

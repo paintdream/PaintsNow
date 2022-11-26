@@ -44,15 +44,16 @@ public:
 	std::vector<String> vecValue;
 };
 
-static bool ServerProcess(RemoteCall& remoteCall, OutputPacket& outputPacket, InputPacket& inputPacket, const TShared<RemoteCall::Context>& context, uint32_t id) {
+static bool ServerProcess(RemoteCall& remoteCall, OutputPacket& outputPacket, rvalue<InputPacket> inputPacket, const TShared<RemoteCall::Session>& context, uint32_t id) {
+	InputPacket& input = inputPacket;
 	if (rand() % 2 == 0) {
 #if !defined(_MSC_VER) || _MSC_VER > 1200
 		RemoteCall* call = &remoteCall;
-		std::thread t([call, outputPacket, inputPacket, id, context]() mutable {
+		std::thread t([call, outputPacket, input, id, context]() mutable {
 			MemoryStream ms(0x1000, true);
-			outputPacket.fltValue = inputPacket.intValue * 10.0f;
-			outputPacket.vecValue.emplace_back(inputPacket.stringValue + "_async_response");
-			call->Complete(context, id, outputPacket, ms);
+			outputPacket.fltValue = input.intValue * 10.0f;
+			outputPacket.vecValue.emplace_back(input.stringValue + "_async_response");
+			context->Complete(id, outputPacket, ms);
 		});
 		t.detach();
 		
@@ -71,36 +72,52 @@ static void ClientReceive(RemoteCall& remoteCall, rvalue<OutputPacket> packetPar
 	printf("Receive: %f, %s\n", packet.fltValue, packet.vecValue[0].c_str());
 }
 
-static void OnClientConnect(RemoteCall& remoteCall, ITunnel::Connection* connection, RemoteCall::STATUS status) {
-	// sync call
-	if (status == RemoteCall::CONNECTED) {
-		InputPacket inputPacket;
-		inputPacket.intValue = 3389;
-		inputPacket.stringValue = "hi~";
-		remoteCall.Call("ServerProcess", std::move(inputPacket), Wrap(ClientReceive));
-		inputPacket.stringValue = "hi2~";
-		remoteCall.Call("MethodRPC.Process", std::move(inputPacket), Wrap(ClientReceive));
-		remoteCall.Flush();
-		printf("Server Connected ... %p\n", connection);
-	} else if (status == RemoteCall::CLOSED || status == RemoteCall::ABORTED) {
-		printf("Server Disconnected ... %p\n", connection);
-	}
-}
+class NewRPCRemoteCall : public RemoteCall {
+public:
+	NewRPCRemoteCall(IThread& threadApi, ITunnel& tunnel, IFilterBase& filter, const String& entry = "") : RemoteCall(threadApi, tunnel, filter, entry) {}
 
-static void OnServerConnect(RemoteCall& remoteCall, ITunnel::Connection* connection, RemoteCall::STATUS status) {
-	// sync call
-	if (status == RemoteCall::CONNECTED) {
-		printf("Client Connected ... %p\n", connection);
-	} else if (status == RemoteCall::CLOSED || status == RemoteCall::ABORTED) {
-		printf("Client Disconnected ... %p\n", connection);
+	class Session : public TReflected<Session, RemoteCall::Session> {
+	public:
+		Session(RemoteCall& remoteCall) : BaseClass(remoteCall) {}
+		void HandleEvent(ITunnel::Connection* connection, ITunnel::EVENT status) override {
+			BaseClass::HandleEvent(connection, status);
+
+			if (IsPassive()) {
+				// server
+				if (status == ITunnel::CONNECTED) {
+					printf("Client Connected ... %p\n", connection);
+				} else if (status == ITunnel::CLOSE || status == ITunnel::ABORT) {
+					printf("Client Disconnected ... %p\n", connection);
+				}
+			} else {
+				if (status == ITunnel::CONNECTED) {
+					InputPacket inputPacket;
+					inputPacket.intValue = 3389;
+					inputPacket.stringValue = "hi~";
+					Invoke("ServerProcess", std::move(inputPacket), Wrap(ClientReceive));
+					inputPacket.stringValue = "hi2~";
+					Invoke("MethodRPC.Process", std::move(inputPacket), Wrap(ClientReceive));
+					Flush();
+					printf("Server Connected ... %p\n", connection);
+				} else if (status == ITunnel::CONNECTED || status == ITunnel::CONNECTED) {
+					printf("Server Disconnected ... %p\n", connection);
+				}
+			}
+		}
+	};
+
+	TShared<RemoteCall::Session> CreateSession() override
+	{
+		return TShared<RemoteCall::Session>::From(new Session(*this));
 	}
-}
+};
 
 class MethodRPC : public TReflected<MethodRPC, IReflectObjectComplex> {
 public:
-	bool Process(RemoteCall& remoteCall, OutputPacket& outputPacket, InputPacket& inputPacket, const TShared<RemoteCall::Context>& context, uint32_t id) {
-		outputPacket.fltValue = inputPacket.intValue / 10.0f;
-		outputPacket.vecValue.emplace_back(inputPacket.stringValue + "_response");
+	bool Process(RemoteCall& remoteCall, OutputPacket& outputPacket, rvalue<InputPacket> inputPacket, const TShared<RemoteCall::Session>& context, uint32_t id) {
+		InputPacket& input = inputPacket;
+		outputPacket.fltValue = input.intValue / 10.0f;
+		outputPacket.vecValue.emplace_back(input.stringValue + "_response");
 		return true;
 	}
 
@@ -122,16 +139,16 @@ bool NewRPC::Run(int randomSeed, int length) {
 	ZFilterPod filterPod;
 	MethodRPC methodRPC;
 
-	RemoteCall serverCall(uniqueThreadApi, tunnel, filterPod, "127.0.0.1:16384", Wrap(OnServerConnect));
+	NewRPCRemoteCall serverCall(uniqueThreadApi, tunnel, filterPod, "127.0.0.1:16384");
 	serverCall.Register("ServerProcess", Wrap(ServerProcess));
 	serverCall.RegisterByObject("MethodRPC", methodRPC);
 	serverCall.Start();
 	uniqueThreadApi.Sleep(2000);
 
 	for (int i = 0; i < length; i++) {
-		RemoteCall clientCall(uniqueThreadApi, tunnel, filterPod);
+		NewRPCRemoteCall clientCall(uniqueThreadApi, tunnel, filterPod);
 		clientCall.Start();
-		clientCall.Connect(Wrap(OnClientConnect), "127.0.0.1:16384");
+		TShared<RemoteCall::Session> session = clientCall.Connect("127.0.0.1:16384");
 		getchar();
 	}
 

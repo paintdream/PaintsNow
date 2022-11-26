@@ -44,23 +44,30 @@ namespace PaintsNow {
 		virtual void InvokeDownload(ResourceBase* resource, void* deviceContext) override {}
 	};
 
-	void Service::StatusHandler(RemoteCall& remoteCall, ITunnel::Connection* connection, RemoteCall::STATUS status) {
-		if (status == RemoteCall::CONNECTED) {
-			ProtoInputCheckVersion inputPacket;
-			remoteCall.Call("RpcCheckVersion", std::move(inputPacket), Wrap(this, &Service::OnCheckVersion));
-			remoteCall.Flush();
+	Service::Service() : RemoteCall(uniqueThreadApi, libEvent, assetFilter) {}
+
+	void Service::Session::HandleEvent(ITunnel::Connection* connection, ITunnel::EVENT status) {
+		if (!IsPassive()) {
+			if (status == ITunnel::CONNECTED) {
+				ProtoInputCheckVersion inputPacket;
+				Invoke("RpcCheckVersion", std::move(inputPacket), Wrap(static_cast<Service*>(&remoteCall), &Service::OnCheckVersion));
+				Flush();
+			}
 		}
 	}
 
 	void Service::Initialize(ISceneExplorer* se) {
 		sceneExp = se;
 		resourceManager = std::make_unique<UnrealResourceManager>(kernel, uniformResourceManager);
-		remoteCall = std::make_unique<RemoteCall>(uniqueThreadApi, libEvent, assetFilter, "", Wrap(this, &Service::StatusHandler));
-		remoteCall->Start();
+		Start();
 	}
 
 	void Service::Reconnect(const String& port) {
-		remoteCall->Connect(Wrap(this, &Service::StatusHandler), port);
+		session = Connect(port);
+	}
+
+	TShared<RemoteCall::Session> Service::CreateSession() {
+		return TShared<RemoteCall::Session>(new Session(*this));
 	}
 
 	void Service::Uninitialize() {

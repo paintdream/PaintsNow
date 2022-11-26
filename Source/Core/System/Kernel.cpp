@@ -37,6 +37,10 @@ Kernel::Kernel(ThreadPool& tp, uint32_t warpCount) : threadPool(tp), maxParallel
 	memset(fullFlushMask, 0, sizeof(fullFlushMask));
 	memset(idleMask, 0, sizeof(idleMask));
 
+	for (uint32_t i = 0; i < warpCount; i++) {
+		idleMask[i / (8 * sizeof(size_t))] |= (size_t)1 << (i % (8 * sizeof(size_t)));
+	}
+
 	SetMaxParallelCount(0);
 	anyFlush.store(STATE_IDLE, std::memory_order_relaxed);
 	resetting.store(0, std::memory_order_relaxed);
@@ -455,6 +459,7 @@ void Kernel::SubTaskQueue::SetPriority(int i) {
 Kernel::SubTaskQueue::SubTaskQueue(const SubTaskQueue& rhs) : TaskQueue(verify_cast<uint32_t>(rhs.ringBuffers.size())) {
 	kernel = rhs.kernel;
 	priority = rhs.priority;
+	stackQueue = rhs.stackQueue;
 	threadWarp.store(nullptr, std::memory_order_relaxed);
 	suspendCount.store(0, std::memory_order_relaxed);
 	queueing.store(0, std::memory_order_release);
@@ -537,12 +542,12 @@ bool Kernel::SubTaskQueue::PreemptExecution() {
 
 		size_t warp = this - &kernel->taskQueueGrid[0];
 		std::atomic<size_t>& s = *reinterpret_cast<std::atomic<size_t>*>(&kernel->idleMask[warp / (sizeof(size_t) * 8)]);
-		s.fetch_or((size_t)1 << (warp & (sizeof(size_t) * 8 - 1)), std::memory_order_relaxed);
+		s.fetch_and(~((size_t)1 << (warp & (sizeof(size_t) * 8 - 1))), std::memory_order_relaxed);
 
 		WarpIndex = thisWarpIndex;
 		return true;
 	} else {
-		return expected == &WarpIndex;
+		return false;
 	}
 }
 
@@ -554,7 +559,7 @@ bool Kernel::SubTaskQueue::YieldExecution() {
 		WarpIndex = ~(uint32_t)0;
 		size_t warp = this - &kernel->taskQueueGrid[0];
 		std::atomic<size_t>& s = *reinterpret_cast<std::atomic<size_t>*>(&kernel->idleMask[warp / (sizeof(size_t) * 8)]);
-		s.fetch_and(~((size_t)1 << (warp & (sizeof(size_t) * 8 - 1))), std::memory_order_relaxed);
+		s.fetch_or((size_t)1 << (warp & (sizeof(size_t) * 8 - 1)), std::memory_order_relaxed);
 
 		if (queueing.exchange(STATE_IDLE, std::memory_order_release) == STATE_QUEUEING) {
 			Flush(kernel->threadPool);

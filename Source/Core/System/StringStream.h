@@ -20,6 +20,9 @@ namespace PaintsNow {
 		bool Seek(SEEK_OPTION option, int64_t offset) override;
 		void Flush() override;
 		bool Transfer(IStreamBase& stream, size_t& len) override;
+		int64_t GetLocation() const;
+		String& GetString();
+		const String& GetString() const;
 	
 	protected:
 		int64_t location;

@@ -2,7 +2,7 @@ local Test = record end
 local CrossDispatcher = require("Engine/Controller/CrossDispatcher")
 
 function Test.Main()
-	local component = CrossScriptModule.New(false)
+	local component = CrossScriptModule.New(false, false)
 	local func = component:Load("print(...) return 2345")
 	component:Call(func, "1234")
 	local running = coroutine.running()
@@ -25,7 +25,7 @@ function Test.Main()
 	   print("GET MSG: " .. msg)
 	end)
 
-	local transparent = CrossScriptModule.New(true)
+	local transparent = CrossScriptModule.New(true, false)
 	local foo = transparent:Load([[
 		local function test(callback)
 		   callback("It' me~~~!")

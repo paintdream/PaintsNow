@@ -31,7 +31,7 @@ static bool WriteBaseObject(IStreamBase& stream, Unique typeID, Unique refTypeID
 	} else if (typeID == byteBufferType) {
 		Bytes* buffer = reinterpret_cast<Bytes*>(ptr);
 		size_t size = buffer->GetSize();
-		if (stream << size) {
+		if (stream << (uint64_t)size) {
 			if (size != 0) {
 				if (!stream.WriteBlock(buffer->GetData(), size)) {
 					result = false;
@@ -94,9 +94,9 @@ static bool ReadBaseObject(IStreamBase& stream, Unique typeID, Unique refTypeID,
 		if (stream >> length) {
 			Bytes* buffer = reinterpret_cast<Bytes*>(ptr);
 			if (length < (size_t)-1) {
-				buffer->Resize(verify_cast<uint32_t>(length));
+				buffer->Resize(verify_cast<size_t>(length));
 				if (length != 0) {
-					size_t s = verify_cast<uint32_t>(length);
+					size_t s = verify_cast<size_t>(length);
 					if (!stream.ReadBlock(buffer->GetData(), s)) {
 						result = false;
 					}

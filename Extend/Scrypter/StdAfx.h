@@ -30,14 +30,20 @@
 #include "../../Source/Core/Driver/Script/Lua/ZScriptLua.h"
 #include "../../Source/Core/Driver/Thread/Pthread/ZThreadPthread.h"
 #include "../../Source/Core/Driver/Archive/Dirent/ZArchiveDirent.h"
+#include "../../Source/Core/System/StringStream.h"
 #include "../../Source/Core/System/MemoryStream.h"
 #include "../../Source/Core/Module/CrossScriptModule.h"
+#include "../../Source/Core/Driver/Filter/Pod/ZFilterPod.h"
+#include "../../Source/General/Misc/Coordinator.h"
+#include "../../Source/General/Driver/Network/LibEvent/ZNetworkLibEvent.h"
 #include "Executive/Worker.h"
 #include "Executive/File.h"
 #include "Executive/Document.h"
 #include "Executive/Executive.h"
 #include <vector>
 #include <shlwapi.h>
+
+#define WM_UPDATE_ALLVIEWS (WM_USER + 1001)
 
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.

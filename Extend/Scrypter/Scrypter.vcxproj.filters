@@ -1,0 +1,655 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{5e5ffdbc-d2ab-438d-9e4d-c71690bb36f1}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{7294f258-3fc7-49d5-a066-7e6a8e14f10a}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{cda9f605-04dd-4cc3-97b1-b59b94e462b9}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+    <Filter Include="Core Files">
+      <UniqueIdentifier>{6650f5e4-8294-4999-89ff-58c4de5d162d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Backport">
+      <UniqueIdentifier>{c821a288-cb2f-4fa3-910e-3c5f36b21ae8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Driver">
+      <UniqueIdentifier>{7cc4fc22-4f4b-40ef-b47c-79455e539435}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Driver\Archive">
+      <UniqueIdentifier>{9c491a02-6cc0-470d-96d1-3cfa01159b15}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Driver\Archive\Dirent">
+      <UniqueIdentifier>{e1760d41-ca76-42fb-a976-3bf8ad4c1cbc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Driver\Filter">
+      <UniqueIdentifier>{9e3965d7-0a15-499a-8c8a-70a0459e3fef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Driver\Filter\Pod">
+      <UniqueIdentifier>{e0886d2b-c9a2-4adb-9e2f-86a4b0566b57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Driver\Filter\Pod\Pod Core">
+      <UniqueIdentifier>{3d082a61-c5ae-48c4-afeb-7b5d4a964a01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Driver\Script">
+      <UniqueIdentifier>{8b872d4e-0d34-4e09-a3e6-85a7836bea6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Driver\Script\Lua">
+      <UniqueIdentifier>{c7dd8044-7479-4011-aa50-1dfc35824dea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Driver\Script\Lua\Lua Core">
+      <UniqueIdentifier>{c7b1acaf-b7a3-4115-b019-60a1cee5510b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Driver\Thread">
+      <UniqueIdentifier>{d4b3d549-6ea5-4eff-9169-a56572f016a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Driver\Thread\Pthread">
+      <UniqueIdentifier>{a150b75c-cc5d-4cdb-990f-6e5fc024aa7c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Interface">
+      <UniqueIdentifier>{efbb97de-f510-4d79-a983-fd3df05f31dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\System">
+      <UniqueIdentifier>{8ca3dd6b-12dc-45fd-be2f-a01d5017a473}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Template">
+      <UniqueIdentifier>{dd0fb222-0b68-4f37-b998-86251bfe705a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Module">
+      <UniqueIdentifier>{b50c98fe-329e-4338-a77a-3b6c0a8ec6d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Executive Files">
+      <UniqueIdentifier>{57e32cb1-cda1-42c8-b278-2c3c5d8753c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Script Files">
+      <UniqueIdentifier>{4f7f867c-581c-4118-ab49-e1262bf256ee}</UniqueIdentifier>
+      <Extensions>lua;luac</Extensions>
+    </Filter>
+    <Filter Include="Core Files\Driver\Network">
+      <UniqueIdentifier>{8019ed53-2ef7-4ebc-8a10-3447b6e627f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Driver\Network\LibEvent">
+      <UniqueIdentifier>{26a17c02-d291-468b-819f-a9d5fb1e34ca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core Files\Misc">
+      <UniqueIdentifier>{07fd580c-2f90-4449-9ddb-571bbe561984}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ChildFrm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CommandDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LeftView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LogView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainFrm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MonitorView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ParameterView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Scrypter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ScrypterDoc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ScrypterView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StdAfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Archive\Dirent\ZArchiveDirent.cpp">
+      <Filter>Core Files\Driver\Archive\Dirent</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Filter\Pod\Core\Pod.c">
+      <Filter>Core Files\Driver\Filter\Pod\Pod Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Filter\Pod\ZFilterPod.cpp">
+      <Filter>Core Files\Driver\Filter\Pod</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lapi.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lauxlib.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lbaselib.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lcode.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lcorolib.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lctype.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\ldblib.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\ldebug.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\ldo.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\ldump.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lfunc.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lgc.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\linit.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\liolib.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\llex.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lmathlib.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lmem.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\loadlib.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lobject.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lopcodes.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\loslib.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lparser.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lstate.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lstring.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lstrlib.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\ltable.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\ltablib.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\ltm.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lundump.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lutf8lib.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lvm.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\Core\lzio.c">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Script\Lua\ZScriptLua.cpp">
+      <Filter>Core Files\Driver\Script\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Driver\Thread\Pthread\ZThreadPthread.cpp">
+      <Filter>Core Files\Driver\Thread\Pthread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IArchive.cpp">
+      <Filter>Core Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IDevice.cpp">
+      <Filter>Core Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IFilterBase.cpp">
+      <Filter>Core Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IMemory.cpp">
+      <Filter>Core Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IReflect.cpp">
+      <Filter>Core Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IScript.cpp">
+      <Filter>Core Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IStreamBase.cpp">
+      <Filter>Core Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\ITask.cpp">
+      <Filter>Core Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IThread.cpp">
+      <Filter>Core Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Interface\IType.cpp">
+      <Filter>Core Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\ConsoleStream.cpp">
+      <Filter>Core Files\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\Graph.cpp">
+      <Filter>Core Files\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\Kernel.cpp">
+      <Filter>Core Files\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\MemoryStream.cpp">
+      <Filter>Core Files\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\Quota.cpp">
+      <Filter>Core Files\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\ShadowStream.cpp">
+      <Filter>Core Files\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\StringStream.cpp">
+      <Filter>Core Files\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\Tape.cpp">
+      <Filter>Core Files\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\TaskGraph.cpp">
+      <Filter>Core Files\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\TaskQueue.cpp">
+      <Filter>Core Files\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\ThreadPool.cpp">
+      <Filter>Core Files\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\System\Tiny.cpp">
+      <Filter>Core Files\System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Module\CrossScript.cpp">
+      <Filter>Core Files\Module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\Module\CrossScriptModule.cpp">
+      <Filter>Core Files\Module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Core\PaintsNow.cpp">
+      <Filter>Core Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Executive\Document.cpp">
+      <Filter>Executive Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Executive\Executive.cpp">
+      <Filter>Executive Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Executive\File.cpp">
+      <Filter>Executive Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Executive\Worker.cpp">
+      <Filter>Executive Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ServiceDlg.cpp">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\General\Driver\Network\LibEvent\ZNetworkLibEvent.cpp">
+      <Filter>Core Files\Driver\Network\LibEvent</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\General\Interface\INetwork.cpp">
+      <Filter>Core Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\General\Interface\ITunnel.cpp">
+      <Filter>Core Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\General\Misc\Coordinator.cpp">
+      <Filter>Core Files\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\General\Misc\RemoteCall.cpp">
+      <Filter>Core Files\Misc</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Scrypter.rc">
+      <Filter>Source Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ChildFrm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LeftView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LogView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MainFrm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MonitorView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ParameterView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Scrypter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ScrypterDoc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ScrypterView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StdAfx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Backport\VC98STRING.h">
+      <Filter>Core Files\Backport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Archive\Dirent\ZArchiveDirent.h">
+      <Filter>Core Files\Driver\Archive\Dirent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Filter\Pod\Core\Pod.h">
+      <Filter>Core Files\Driver\Filter\Pod\Pod Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Filter\Pod\ZFilterPod.h">
+      <Filter>Core Files\Driver\Filter\Pod</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lapi.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lauxlib.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lcode.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lctype.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\ldebug.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\ldo.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lfunc.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lgc.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\ljumptab.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\llex.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\llimits.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lmem.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lobject.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lopcodes.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lopnames.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lparser.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lprefix.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lstate.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lstring.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\ltable.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\ltm.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lua.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\luaconf.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lualib.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lundump.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lvm.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\Core\lzio.h">
+      <Filter>Core Files\Driver\Script\Lua\Lua Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Script\Lua\ZScriptLua.h">
+      <Filter>Core Files\Driver\Script\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Driver\Thread\Pthread\ZThreadPthread.h">
+      <Filter>Core Files\Driver\Thread\Pthread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IArchive.h">
+      <Filter>Core Files\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IDevice.h">
+      <Filter>Core Files\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IFilterBase.h">
+      <Filter>Core Files\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IMemory.h">
+      <Filter>Core Files\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IReflect.h">
+      <Filter>Core Files\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IScript.h">
+      <Filter>Core Files\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IStreamBase.h">
+      <Filter>Core Files\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\ITask.h">
+      <Filter>Core Files\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IThread.h">
+      <Filter>Core Files\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Interface\IType.h">
+      <Filter>Core Files\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\ConsoleStream.h">
+      <Filter>Core Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\Graph.h">
+      <Filter>Core Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\Kernel.h">
+      <Filter>Core Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\MemoryStream.h">
+      <Filter>Core Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\Quota.h">
+      <Filter>Core Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\ShadowStream.h">
+      <Filter>Core Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\StringStream.h">
+      <Filter>Core Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\Tape.h">
+      <Filter>Core Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\TaskGraph.h">
+      <Filter>Core Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\TaskQueue.h">
+      <Filter>Core Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\ThreadPool.h">
+      <Filter>Core Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\System\Tiny.h">
+      <Filter>Core Files\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TAlgorithm.h">
+      <Filter>Core Files\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TAllocator.h">
+      <Filter>Core Files\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TAtomic.h">
+      <Filter>Core Files\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TBuffer.h">
+      <Filter>Core Files\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TCache.h">
+      <Filter>Core Files\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TContainer.h">
+      <Filter>Core Files\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TEvent.h">
+      <Filter>Core Files\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TKdTree.h">
+      <Filter>Core Files\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TMap.h">
+      <Filter>Core Files\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TMatrix.h">
+      <Filter>Core Files\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TObject.h">
+      <Filter>Core Files\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TPool.h">
+      <Filter>Core Files\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TProxy.h">
+      <Filter>Core Files\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TQueue.h">
+      <Filter>Core Files\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TTagged.h">
+      <Filter>Core Files\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Template\TVector.h">
+      <Filter>Core Files\Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Module\CrossScript.h">
+      <Filter>Core Files\Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\Module\CrossScriptModule.h">
+      <Filter>Core Files\Module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Core\PaintsNow.h">
+      <Filter>Core Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Executive\Document.h">
+      <Filter>Executive Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Executive\Executive.h">
+      <Filter>Executive Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Executive\File.h">
+      <Filter>Executive Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Executive\Worker.h">
+      <Filter>Executive Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ServiceDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\General\Driver\Network\LibEvent\ZNetworkLibEvent.h">
+      <Filter>Core Files\Driver\Network\LibEvent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\General\Interface\INetwork.h">
+      <Filter>Core Files\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\General\Interface\ITunnel.h">
+      <Filter>Core Files\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\General\Misc\Coordinator.h">
+      <Filter>Core Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\General\Misc\RemoteCall.h">
+      <Filter>Core Files\Misc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\Scrypter.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\ScrypterDoc.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\Toolbar.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="res\Scrypter.rc2">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="res\Core.lua">
+      <Filter>Script Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="script\datahunter.lua">
+      <Filter>Script Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

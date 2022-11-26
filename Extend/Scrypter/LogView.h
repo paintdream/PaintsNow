@@ -18,10 +18,10 @@ protected:
 
 // Attributes
 public:
+	CFont m_font;
 
 // Operations
 public:
-
 // Overrides
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CLogView)
@@ -29,6 +29,7 @@ public:
 	virtual void OnInitialUpdate();
 	protected:
 	virtual void OnDraw(CDC* pDC);      // overridden to draw this view
+	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -38,6 +39,8 @@ protected:
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;
 #endif
+
+	std::vector<PaintsNow::TQueueList<PaintsNow::LogData>::const_iterator> m_iterators;
 
 	// Generated message map functions
 protected:

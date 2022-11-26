@@ -6,11 +6,9 @@
 #pragma once
 
 #include "../../Core/Interface/IReflect.h"
+#include "../../General/Misc/RemoteCall.h"
 
 namespace PaintsNow {
-	class ProtoInput : public TReflected<ProtoInput, IReflectObjectComplex> {};
-	class ProtoOutput : public TReflected<ProtoOutput, IReflectObjectComplex> {};
-
 	typedef ProtoInput ProtoInputCheckVersion;
 	class ProtoOutputCheckVersion : public TReflected<ProtoOutputCheckVersion, ProtoOutput> {
 	public:

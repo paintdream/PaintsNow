@@ -135,6 +135,21 @@ Package=<4>
 
 ###############################################################################
 
+Project: "WindTower"=.\WindTower\WindTower.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name PaintsNow
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Project: "MythForest"=.\MythForest\MythForest.dsp - Package Owner=<4>
 
 Package=<5>

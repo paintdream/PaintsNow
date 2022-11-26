@@ -20,19 +20,27 @@ TObject<IReflect>& CrossScriptModule::operator () (IReflect& reflect) {
 	return *this;
 }
 
-TShared<CrossScript> CrossScriptModule::New(bool transparentMode) {
+TShared<CrossScript> CrossScriptModule::New(bool transparentMode, bool disableSandBoxMode) {
 	TShared<CrossScript> crossScript = TShared<CrossScript>::From(new CrossScript(threadPool, *script.NewScript()));
 
 	if (transparentMode) {
 		crossScript->Flag().fetch_or(CrossScript::CROSSSCRIPT_TRANSPARENT, std::memory_order_relaxed);
 	}
 
+	if (!disableSandBoxMode) {
+		IScript::Request& request = crossScript->GetScript().GetDefaultRequest();
+		request.DoLock();
+		request << global << key("io") << nil << endtable;
+		request << global << key("os") << nil << endtable;	
+		request.UnLock();
+	}
+
 	return crossScript;
 }
 
-TShared<CrossScript> CrossScriptModule::RequestNew(IScript::Request& request, bool transparentMode) {
+TShared<CrossScript> CrossScriptModule::RequestNew(IScript::Request& request, bool transparentMode, bool disableSandBoxMode) {
 	CHECK_REFERENCES_NONE();
-	return New(transparentMode);
+	return New(transparentMode, disableSandBoxMode);
 }
 
 TShared<CrossRoutine> CrossScriptModule::RequestGet(IScript::Request& request, IScript::Delegate<CrossScript> crossScript, const String& name) {

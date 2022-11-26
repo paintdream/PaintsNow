@@ -34,6 +34,8 @@ public:
 	virtual BOOL OnPreparePrinting(CPrintInfo* pInfo);
 	virtual void OnBeginPrinting(CDC* pDC, CPrintInfo* pInfo);
 	virtual void OnEndPrinting(CDC* pDC, CPrintInfo* pInfo);
+	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
+	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -45,12 +47,23 @@ public:
 #endif
 
 protected:
+	const PaintsNow::RecordData* FindRecord(size_t item);
+	bool FilterRecord(const PaintsNow::RecordData& record);
+
+	std::vector<PaintsNow::TQueueList<PaintsNow::RecordData>::const_iterator> m_iterators;
+	PaintsNow::TQueueList<const PaintsNow::RecordData*> m_filteredRecordData;
+	PaintsNow::TQueueList<const PaintsNow::RecordData*>::const_iterator m_lastFilteredRecordIterator;
+	size_t m_lastFilteredRecordIndex;
+	size_t m_filteredRecordCount;
 
 // Generated message map functions
 protected:
 	//{{AFX_MSG(CScrypterView)
-		// NOTE - the ClassWizard will add and remove member functions here.
-		//    DO NOT EDIT what you see in these blocks of generated code !
+	afx_msg void OnOdcachehint(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnGetdispinfo(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnOdfinditem(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnRclick(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDblclk(NMHDR* pNMHDR, LRESULT* pResult);
 	//}}AFX_MSG
 	afx_msg void OnStyleChanged(int nStyleType, LPSTYLESTRUCT lpStyleStruct);
 	DECLARE_MESSAGE_MAP()

@@ -16,14 +16,14 @@ namespace PaintsNow {
 		~CrossScriptModule() override;
 		TObject<IReflect>& operator () (IReflect& reflect) override;
 
-		TShared<CrossScript> New(bool transparentMode);
+		TShared<CrossScript> New(bool transparentMode, bool disableSandboxMode);
 
 		/// <summary>
 		/// Create CrossScript
 		/// </summary>
 		/// <param name="transparentMode"> if it is transparent mode (i.e. auto-convert remote functions to local function proxies) </param>
 		/// <returns></returns>
-		TShared<CrossScript> RequestNew(IScript::Request& request, bool transparentMode);
+		TShared<CrossScript> RequestNew(IScript::Request& request, bool transparentMode, bool disableSandBoxMode);
 
 		/// <summary>
 		/// Get CrossRoutine of local engine from global name.

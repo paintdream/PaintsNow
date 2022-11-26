@@ -31,51 +31,104 @@ using namespace PaintsNow;
 
 CScrypterDoc::CScrypterDoc()
 {
-	// TODO: add one-time construction code here
-
+	m_updateState.store(0, std::memory_order_relaxed);
 }
 
 CScrypterDoc::~CScrypterDoc()
 {
 }
 
+static std::atomic<uint32_t> GNextWarp = 0;
 BOOL CScrypterDoc::OnNewDocument()
 {
 	if (!CDocument::OnNewDocument())
 		return FALSE;
 
-	ResetDocument();
+	MakeDocument();
+	SetModifiedFlag(TRUE);
 
 	return TRUE;
 }
 
-void CScrypterDoc::ResetDocument()
+void CScrypterDoc::MakeDocument()
 {
-	static std::atomic<uint32_t> nextWarp = 0;
-	CScrypterApp* app = static_cast<CScrypterApp*>(AfxGetApp());
-	Executive& executive = *app->m_executive;
-	m_document.Reset(new Document(executive, (nextWarp.fetch_add(1, std::memory_order_relaxed)) % executive.GetKernel().GetWarpCount()));
+	if (m_document() == nullptr)
+	{
+		CScrypterApp* app = static_cast<CScrypterApp*>(AfxGetApp());
+		Executive& executive = *app->m_executive;
+		Kernel& kernel = executive.GetKernel();
+		uint32_t warp = (GNextWarp.fetch_add(1, std::memory_order_relaxed)) % kernel.GetWarpCount();
+		m_document.Reset(new Document(executive.GetKernel(), executive.GetArchive(), *executive.GetWorkers()[warp], Wrap(this, &CScrypterDoc::OnDocumentUpdated)));
+		m_document->SetWarpIndex(warp);
+	}
+}
+
+void CScrypterDoc::CompleteDocumentUpdated()
+{
+	while (m_updateState.exchange(0, std::memory_order_acquire) == 1)
+	{
+		OnDocumentUpdated(m_document()); // repost to this
+	}
+}
+
+void CScrypterDoc::OnDocumentUpdated(Document* doc)
+{
+	ASSERT(m_document() == doc);
+
+	if (m_updateState.exchange(1, std::memory_order_relaxed) == 0)
+	{
+		m_updateState.store(2, std::memory_order_release);
+		AfxGetApp()->GetMainWnd()->PostMessage(WM_UPDATE_ALLVIEWS, 0, reinterpret_cast<LPARAM>(this));
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // CScrypterDoc serialization
+static ZFilterPod GFilterPod;
 
-void CScrypterDoc::Serialize(CArchive& ar)
+BOOL CScrypterDoc::DoSave(LPCTSTR lpszPathName, BOOL bReplace)
 {
-	if (ar.IsStoring())
+	if (m_document->AcquireLock())
 	{
-		const String& pluginPath = m_document->GetPluginPath();
-		ar.Write(pluginPath.c_str(), pluginPath.size());
+		BOOL ret = CDocument::DoSave(lpszPathName, bReplace);
+		m_document->ReleaseLock();
+		return ret;
 	}
 	else
 	{
-		size_t length = (size_t)ar.GetFile()->GetLength();
-		String pluginPath;
-		pluginPath.resize(length);
-		ar.Read(const_cast<char*>(pluginPath.c_str()), (UINT)length);
-		ResetDocument();
-		m_document->SetPluginPath(pluginPath);
+		AfxGetApp()->GetMainWnd()->MessageBox(_T("Failed to save file while document is busy!"));
+		return FALSE;
 	}
+}
+
+void CScrypterDoc::Serialize(CArchive& ar)
+{
+	MakeDocument();
+
+	bool storing = ar.IsStoring() != 0;
+
+	CFile* file = ar.GetFile();
+	m_document->PreSerialize(storing);
+	if (storing)
+	{
+		MemoryStream stream(1024 * 64);
+		IStreamBase* filter = GFilterPod.CreateFilter(stream);
+		*filter << *m_document;
+		file->Write(stream.GetBuffer(), verify_cast<UINT>(stream.GetOffset()));
+		filter->Destroy();
+	}
+	else
+	{
+		String str;
+		str.resize((size_t)file->GetLength());
+		StringStream stream(str);
+		file->Read(const_cast<char*>(str.data()), verify_cast<UINT>(str.size()));
+		IStreamBase* filter = GFilterPod.CreateFilter(stream);
+		*filter >> *m_document;
+		filter->Destroy();
+	}
+
+	m_document->PostSerialize(storing);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -95,3 +148,35 @@ void CScrypterDoc::Dump(CDumpContext& dc) const
 
 /////////////////////////////////////////////////////////////////////////////
 // CScrypterDoc commands
+
+void CScrypterDoc::Clear()
+{
+	Document* document = m_document();
+	if (document->AcquireLock())
+	{
+		document->Clear();
+		document->ReleaseLock();
+	}
+
+	UpdateAllViews(nullptr, UPDATEVIEW_RESET);
+}
+
+void CScrypterDoc::DeleteContents() 
+{
+	CDocument::DeleteContents();
+
+	/*
+	if (m_document)
+	{
+		m_document->ClearError();
+		if (m_document->AcquireLock())
+		{
+			m_document->Clear();
+			m_document->ReleaseLock();
+		}
+		else
+		{
+			AfxGetApp()->GetMainWnd()->MessageBox(_T("Failed to delete contents while document is busy!"));
+		}
+	}*/
+}

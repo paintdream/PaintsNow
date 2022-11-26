@@ -10,6 +10,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // CCommandDlg dialog
 
+class CScrypterDoc;
 class CCommandDlg : public CDialogBar
 {
 // Construction
@@ -19,10 +20,12 @@ public:
 // Dialog Data
 	//{{AFX_DATA(CCommandDlg)
 	enum { IDD = IDR_MAINFRAME };
+	CProgressCtrl	m_progress;
 	CEdit	m_configScript;
 	//}}AFX_DATA
 
 	void OnActiveFrameChanged(CWnd* activeWnd);
+	void UpdateProgressBar(CScrypterDoc* doc);
 
 // Overrides
 	// ClassWizard generated virtual function overrides
@@ -33,13 +36,16 @@ public:
 
 // Implementation
 protected:
+	void RefreshDocument();
 
 	// Generated message map functions
 	//{{AFX_MSG(CCommandDlg)
 	afx_msg LRESULT OnInitDialog(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnBrowse();
 	afx_msg void OnGo();
-	afx_msg void OnConfig();
+	afx_msg void OnStop();
+	afx_msg void OnPause();
+	afx_msg void OnClear();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };

@@ -1,7 +1,10 @@
 -- Engine/Core.lua
 -- PaintDream (paintdream@paintdream.com)
 
-local Core = {}
+package.path = package.path .. RootDirectory .. "/script/?.lua;" .. RootDirectory .. "/../script/?.lua;"
+package.cpath = package.cpath .. RootDirectory .. "/script/?.dll;" .. RootDirectory .. "/../script/?.dll;"
+
+Core = {}
 
 function Core.Merge(g, t)
 	for k, v in pairs(t) do
@@ -343,86 +346,207 @@ function Core.Decode(data, refDict)
 	return DecodeEx(text, formatTable, refDict)
 end
 
-function Core.Event()
-	return { Co = coroutine.running(), Waiting = false, Finished = false, Returns = {} }
+function Core.Pipe()
+	return {
+		Coroutine = coroutine.running(),
+		Waiting = false,
+		Returns = {}
+	}
 end
 
-function Core.Reset(event)
-	event.Waiting = false
-	event.Finished = false
-	event.Returns = {}
-	return event
-end
-
-function Core.Signal(event, ...)
-	if event.Waiting then
-		coroutine.resume(event.Co, ...)
+function Core.Push(pipe, ...)
+	if pipe.Waiting then
+		coroutine.resume(pipe.Coroutine, ...)
 	else
-		event.Finished = true
-		event.Returns = table.pack(...)
+		pipe.Returns[#pipe.Returns + 1] = pipe.Returns[1]
+		pipe.Returns[1] = table.pack(...)
 	end
 end
 
-function Core.Wait(event)
-	if event.Finished then
-		return table.unpack(event.Returns)
+function Core.Pop(pipe)
+	local returns
+	if next(pipe.Returns) then
+		returns = table.remove(pipe.Returns)
 	else
-		event.Waiting = true
-		return coroutine.yield()
+		pipe.Waiting = true
+		returns = table.pack(coroutine.yield())
+		pipe.Waiting = false
 	end
+	
+	return table.unpack(returns)
 end
 
-local queue = Executive.Queue
-function Core.Queue(func, ...)
-	local event = Core.Event()
-	if not queue(function (...) return Core.Signal(event, ...) end, func, ...) then
-		event.Returns = table.pack(_G[func](...))
-		event.Finished = true
+function Core.Invoke(func, bufferSize)
+	local dispatcher = {}
+	dispatcher.Buffer = {}
+	dispatcher.BufferSize = bufferSize or ThreadCount
+	dispatcher.Coroutine = coroutine.running()
+	dispatcher.Count = 0
+	dispatcher.WaitingComplete = false
+	dispatcher.Completed = false
+
+	local target = coroutine.create(func)
+
+	Executive.Queue(function ()
+		coroutine.resume(target, dispatcher)
+	end)
+
+	return dispatcher
+end
+
+function Core.Wait(dispatcher)
+	dispatcher.WaitingComplete = true
+
+	if not dispatcher.Completed then
+		coroutine.yield()
 	end
 
-	return event
+	dispatcher.WaitingComplete = false
+	dispatcher.Completed = false
+end
+
+function Core.Dispatch(dispatcher, completion, routine, ...)
+	-- must create from Core.Invoke in parent coroutine
+	assert(dispatcher.Buffer)
+	assert(dispatcher.Coroutine ~= coroutine.running())
+	dispatcher.Count = dispatcher.Count + 1
+
+	local dispatched = Executive.Dispatch(function (...)
+		-- dispatch new if needed
+		local buffer = dispatcher.Buffer
+
+		while next(buffer) do
+			dispatcher.Count = dispatcher.Count - 1
+			if not Core.Dispatch(dispatcher, completion, table.unpack(table.remove(buffer))) then
+				break
+			end
+
+			local barrier = dispatcher.BufferBarrier
+			if barrier then
+				dispatcher.BufferBarrier = nil
+				-- resume wait marked by <----
+				coroutine.resume(barrier)
+			end
+		end
+
+		completion(...)
+		dispatcher.Count = dispatcher.Count - 1
+
+		if dispatcher.Count == 0 then
+			dispatcher.Completed = true
+			if dispatcher.WaitingComplete then
+				coroutine.resume(dispatcher.Coroutine)
+			end
+		end
+	end, routine, ...)
+	
+	if not dispatched then
+		-- failed, try go deferred buffer
+		local buffer = dispatcher.Buffer
+		if #buffer >= dispatcher.BufferSize then
+			assert(not dispatcher.BufferBarrier)
+			dispatcher.BufferBarrier = coroutine.running()
+			coroutine.yield() -- <---- wait for dispatch callback
+		end
+	
+		assert(#buffer < dispatcher.BufferSize)
+		table.insert(buffer, table.pack(routine, ...))
+	end
+
+	return dispatched
 end
 
 -- functions starts with '_' is called by Scrypter engine
-local getupvalue = debug.getupvalue
-local dump = string.dump
-local getinfo = debug.getinfo
-
 -- shall NOT refer any upvalues in this function!
 function _SetUpValues(func, upvalues)
 	for i = 1, #upvalues / 2 do
 		local index = upvalues[i * 2 - 1]
 		local value = upvalues[i * 2]
-		setupvalue(func, index, value)
+		debug.setupvalue(func, index, value)
 	end
+
+	return func
 end
 
-function _CompileRoutine(crossScripts, func)
-	local crossRoutines = {}
-	local binaryCode = dump(func)
+function _EncodeRoutineEx(func)
+	local binaryCode = string.dump(func)
 	local upvalues = {}
-	local nupvals = getinfo(func, "u").nups
+	local nupvals = debug.getinfo(func, "u").nups
 
 	for i = 1, nupvals do
-		local name, value = getupvalue(func, i)
-		if name ~= "_ENV" then
+		local name, value = debug.getupvalue(func, i)
+		if name ~= "_ENV" and value ~= nil then
 			table.insert(upvalues, i)
 			table.insert(upvalues, value)
 		end
 	end
 
+	return binaryCode, upvalues
+end
+
+function _EncodeRoutine(func)
+	local binaryCode, upvalues = _EncodeRoutineEx(func)
+	return binaryCode, Core.Encode(upvalues)
+end
+
+function _DecodeRoutine(binaryCode, upvalues)
+	local func = load(binaryCode, "_Decoded")
+	return _SetUpValues(func, Core.Decode(upvalues))
+end
+
+function _CompileRoutine(crossScripts, func)
+	local crossRoutines = {}
+	local binaryCode, upvalues = _EncodeRoutineEx(func)
+
 	for i = 1, #crossScripts do
 		local crossScript = crossScripts[i]
-		local remoteFunc = crossScript:Load(binaryCode)
+		local remoteFunc = CrossScriptModule.Load(crossScript, binaryCode)
 		assert(remoteFunc)
-		local setup = crossScript:Get("_SetUpValues")
+		local setup = CrossScriptModule.Get(crossScript, "_SetUpValues")
 		assert(setup)
 		-- set upvalues
-		crossScript:Call(setup, remoteFunc, upvalues)
+		CrossScriptModule.Call(crossScript, setup, remoteFunc, upvalues)
 		table.insert(crossRoutines, remoteFunc)
 	end
 
 	return crossRoutines	
+end
+
+function print(...)
+	return Executive.Log(table.concat({ ... }, "\t"))
+end
+
+function Core.WrapRoutine(routine)
+	return function (...)
+		local co = coroutine.create(routine)
+		coroutine.resume(co, ...)
+	end
+end
+
+function Core.WrapUploadParameters(config)
+	return function (parameters)
+		-- fill default values
+		local map = {}
+		for k, v in ipairs(config) do
+			map[v.name]	= k
+		end
+
+		for i, v in ipairs(config) do
+			config[v.name] = v.value
+		end
+
+		-- fill overrided values
+		for i, v in ipairs(parameters) do
+			config[v.name] = v.value
+			config[map[v.name]].value = v.value
+		end
+	end
+end
+
+function Core.WrapDownloadParameters(config)
+	return function ()
+		return config
+	end
 end
 
 return Core

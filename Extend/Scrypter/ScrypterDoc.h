@@ -9,6 +9,13 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+enum
+{
+	UPDATEVIEW_REFRESH = 0,
+	UPDATEVIEW_RESET,
+	UPDATEVIEW_REDRAW,
+	UPDATEVIEW_IDLE
+};
 
 class CScrypterDoc : public CDocument
 {
@@ -21,6 +28,8 @@ public:
 
 // Operations
 public:
+	void MakeDocument();
+	void Clear();
 
 // Overrides
 	// ClassWizard generated virtual function overrides
@@ -28,9 +37,9 @@ public:
 	public:
 	virtual BOOL OnNewDocument();
 	virtual void Serialize(CArchive& ar);
+	virtual BOOL DoSave(LPCTSTR lpszPathName, BOOL bReplace);
+	virtual void DeleteContents();
 	//}}AFX_VIRTUAL
-
-	void ResetDocument();
 
 // Implementation
 public:
@@ -41,7 +50,13 @@ public:
 #endif
 
 public:
-	PaintsNow::TUnique<PaintsNow::Document>	m_document;
+	PaintsNow::TShared<PaintsNow::Document>	m_document;
+	PaintsNow::String m_filterPrefix;
+	std::atomic<size_t> m_updateState;
+	void CompleteDocumentUpdated();
+
+protected:
+	void OnDocumentUpdated(PaintsNow::Document* document);
 // Generated message map functions
 protected:
 	//{{AFX_MSG(CScrypterDoc)

@@ -12,8 +12,9 @@
 
 namespace PaintsNow {
 	class ResourceManager;
-	class Service {
+	class Service : public RemoteCall {
 	public:
+		Service();
 		void Initialize(ISceneExplorer* sceneExp);
 		void Uninitialize();
 
@@ -22,20 +23,26 @@ namespace PaintsNow {
 			return IsConnected();
 		}
 
-		RemoteCall* operator -> () const {
-			return remoteCall.get();
-		}
-
 		ResourceManager& GetResourceManager() const;
 		bool IsConnected() const;
+		RemoteCall::Session& GetSession() { return *session; }
+
+		class Session : public TReflected<Session, RemoteCall::Session> {
+		public:
+			Session(RemoteCall& remoteCall) : BaseClass(remoteCall) {}
+			void HandleEvent(ITunnel::Connection* connection, ITunnel::EVENT status) override;
+		};
 
 	protected:
-		void StatusHandler(RemoteCall& remoteCall, ITunnel::Connection* connection, RemoteCall::STATUS status);
 		void OnCheckVersion(RemoteCall& remoteCall, ProtoOutputCheckVersion&& outputPacket);
+
+	protected:
+		TShared<RemoteCall::Session> CreateSession();
 
 	protected:
 		std::unique_ptr<RemoteCall> remoteCall;
 		std::unique_ptr<ResourceManager> resourceManager;
+		TShared<RemoteCall::Session> session;
 		String clientVersion;
 		ISceneExplorer* sceneExp;
 	};

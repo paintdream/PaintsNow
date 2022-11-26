@@ -19,7 +19,7 @@ void SLeavesWidget::Construct(const FArguments& InArgs) {
 	UE_LOG(LogTemp, Log, TEXT("SLeavesWidget::Construct..."));
 
 	service = InArgs._service;
-	(*service).Initialize(this);
+	service->Initialize(this);
 	tunnelIdentifier = SNew(SEditableText).Text(NSLOCTEXT("Tunnel", "127.0.0.1:16384", "127.0.0.1:16384"));
 
 	auto MessagesTextBox = SNew(SMultiLineEditableTextBox)
@@ -196,14 +196,14 @@ static void PostResource(PaintsNow::Service& service, PaintsNow::ResourceBase& r
 	inputPacket.location = location;
 	inputPacket.extension = extension;
 	inputPacket.resourceData = std::move(data);
-	service->Call("RpcPostResource", std::move(inputPacket), Wrap(OnResourceComplete));
+	service.GetSession().Invoke("RpcPostResource", std::move(inputPacket), Wrap(OnResourceComplete));
 }
 
 static void CompleteSync(PaintsNow::Service& service) {
 	using namespace PaintsNow;
 
 	ProtoInputComplete inputPacket;
-	service->Call("RpcComplete", std::move(inputPacket), Wrap(OnAllComplete));
+	service.GetSession().Invoke("RpcComplete", std::move(inputPacket), Wrap(OnAllComplete));
 }
 
 FReply SLeavesWidget::OnConnectClicked() {
@@ -265,7 +265,7 @@ void SLeavesWidget::CollectSceneEntity(AActor& actor) {
 		inputPacket.entityID = entityID;
 		inputPacket.groupID = 0;
 		inputPacket.entityName = actorName;
-		(*service)->Call("RpcPostEntity", std::move(inputPacket), Wrap(OnEntityComplete));
+		service->GetSession().Invoke("RpcPostEntity", std::move(inputPacket), Wrap(OnEntityComplete));
 	}
 
 	{
@@ -274,17 +274,17 @@ void SLeavesWidget::CollectSceneEntity(AActor& actor) {
 		inputPacket.position = ConvertVector(transform.GetLocation() * FVector(-1, 1, 1) / 100.0f);
 		inputPacket.scale = ConvertVector(transform.GetScale3D());
 		inputPacket.rotation = ConvertVector(transform.GetRotation().Euler() / 180.0f * PI);
-		(*service)->Call("RpcPostTransformComponent", std::move(inputPacket), Wrap(OnComponentComplete));
+		service->GetSession().Invoke("RpcPostTransformComponent", std::move(inputPacket), Wrap(OnComponentComplete));
 	}
 
 	{
 		ProtoInputPostEntityComponent inputPacket;
 		inputPacket.entityID = entityID;
 		inputPacket.componentID = componentCount;
-		(*service)->Call("RpcPostEntityComponent", std::move(inputPacket), Wrap(OnComponentComplete));
+		service->GetSession().Invoke("RpcPostEntityComponent", std::move(inputPacket), Wrap(OnComponentComplete));
 	}
 
-	(*service)->Flush();
+	service->GetSession().Flush();
 	componentCount++;
 
 	// Enumerate all components and export them
@@ -689,7 +689,7 @@ void SLeavesWidget::OnExportMeshComponent(UMeshComponent* meshComponent) {
 							inputPacket.componentID = modelComponentID;
 							inputPacket.meshGroupID = k;
 							inputPacket.materialResource = materialResource->GetLocation();
-							(*service)->Call("RpcPostModelComponentMaterial", std::move(inputPacket), Wrap(OnComponentComplete));
+							service->GetSession().Invoke("RpcPostModelComponentMaterial", std::move(inputPacket), Wrap(OnComponentComplete));
 						}
 					}
 
@@ -698,7 +698,7 @@ void SLeavesWidget::OnExportMeshComponent(UMeshComponent* meshComponent) {
 					ProtoInputPostModelComponent inputPacket;
 					inputPacket.componentID = modelComponentID;
 					inputPacket.meshResource = meshResource->GetLocation();
-					(*service)->Call("RpcPostModelComponent", std::move(inputPacket), Wrap(OnComponentComplete));
+					service->GetSession().Invoke("RpcPostModelComponent", std::move(inputPacket), Wrap(OnComponentComplete));
 
 					UE_LOG(LogStats, Display, TEXT("LOD %d Vertices: %d, Primitives: %d, VertexColor: %s, UV Channels: %d\n"), i, positionBuffer.GetNumVertices(), indexBuffer.Num() / 3, colorBuffer.GetNumVertices() == 0 ? TEXT("False") : TEXT("True"), staticMeshBuffer.GetNumTexCoords());
 				}
@@ -707,8 +707,8 @@ void SLeavesWidget::OnExportMeshComponent(UMeshComponent* meshComponent) {
 			ProtoInputPostEntityComponent inputPacket;
 			inputPacket.entityID = entityCount;
 			inputPacket.componentID = mapModelComponent[staticMesh];
-			(*service)->Call("RpcPostEntityComponent", std::move(inputPacket), Wrap(OnComponentComplete));
-			(*service)->Flush();
+			service->GetSession().Invoke("RpcPostEntityComponent", std::move(inputPacket), Wrap(OnComponentComplete));
+			service->GetSession().Flush();
 		}
 	}
 }
@@ -772,17 +772,17 @@ void SLeavesWidget::OnExportSphereReflectionComponent(UReflectionCaptureComponen
 		ProtoInputPostEnvCubeComponent inputPacket;
 		inputPacket.componentID = componentCount;
 		inputPacket.texturePath = textureName;
-		(*service)->Call("RpcPostEnvCubeComponent", std::move(inputPacket), Wrap(OnComponentComplete));
+		service->GetSession().Invoke("RpcPostEnvCubeComponent", std::move(inputPacket), Wrap(OnComponentComplete));
 	}
 
 	{
 		ProtoInputPostEntityComponent inputPacket;
 		inputPacket.componentID = componentCount++;
 		inputPacket.entityID = entityCount;
-		(*service)->Call("RpcPostEntityComponent", std::move(inputPacket), Wrap(OnComponentComplete));
+		service->GetSession().Invoke("RpcPostEntityComponent", std::move(inputPacket), Wrap(OnComponentComplete));
 	}
 
-	(*service)->Flush();
+	service->GetSession().Flush();
 }
 
 void SLeavesWidget::WriteLog(LOG_LEVEL logLevel, const std::string& content) {

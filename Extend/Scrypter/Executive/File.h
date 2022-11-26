@@ -7,10 +7,11 @@
 
 namespace PaintsNow
 {
-	class File : public TReflected<File, WarpTiny>
+	class Document;
+	class File final : public TReflected<File, WarpTiny>
 	{
 	public:
-		File(HANDLE file, HANDLE iocpHandle, uint32_t bufferSize);
+		File(Document* document, HANDLE file, HANDLE iocpHandle, uint32_t bufferSize);
 		~File() override;
 		HANDLE GetHandle() const;
 		const char* GetBuffer() const;
@@ -25,9 +26,12 @@ namespace PaintsNow
 		static File* FromOverlapped(OVERLAPPED* overlapped);
 		IScript::Request::Ref GetCallback() const;
 		void SetCallback(const IScript::Request::Ref& callback);
+		Document* GetDocument() const;
 
 	protected:
 		File(const File& file);
+
+		TShared<Document> document;
 		HANDLE fileHandle;
 		HANDLE iocpHandle;
 		OVERLAPPED overlapped;

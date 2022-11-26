@@ -70,3 +70,18 @@ bool StringStream::Seek(SEEK_OPTION option, int64_t f) {
 
 	return false;
 }
+
+int64_t StringStream::GetLocation() const
+{
+	return location;
+}
+
+String& StringStream::GetString()
+{
+	return storage;
+}
+
+const String& StringStream::GetString() const
+{
+	return storage;
+}

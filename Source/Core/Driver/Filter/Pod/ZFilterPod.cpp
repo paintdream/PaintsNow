@@ -65,6 +65,7 @@ public:
 	void ReadTree();
 	void WriteTree();
 	void SyncTree();
+	void SortTree();
 
 	void MovePointer(int64_t offset);
 	int64_t GetPointer() const;
@@ -332,6 +333,48 @@ void FilterPodImpl::WriteTree() {
 	PodWriteSpecRoot(root, &streamAdapter, this);
 }
 
+struct TypeSorter {
+	void Visit(Pod* pod) {
+		if (PodIsPlain(pod) || allNodes.find(pod) != allNodes.end())
+			return;
+
+		allNodes.insert(pod);
+		PodList* start = pod->subList;
+		if (start != nullptr) {
+			PodList* p = start;
+			do {
+				Visit(p->node);
+				p = p->next;
+			} while (p != start);
+		}
+
+		orderedNodes.emplace_back(pod);
+	}
+
+	std::set<Pod*> allNodes;
+	std::vector<Pod*> orderedNodes;
+};
+
+void FilterPodImpl::SortTree() 	{
+	TypeSorter sorter;
+	PodNode* p = root->head;
+	uint32_t count = 0;
+	while (p != nullptr) {
+		sorter.Visit(p->pod);
+		PodNode* q = p;
+		p = p->next;
+		count++;
+	}
+
+	assert(count == sorter.orderedNodes.size());
+	p = root->head;
+	for (size_t i = 0; i < sorter.orderedNodes.size(); i++) {
+		Pod* d = sorter.orderedNodes[i];
+		p->pod = d;
+		p = p->next;
+	}
+}
+
 void FilterPodImpl::ReadTree() {
 	PodParseSpecRoot(readRoot, &streamAdapter, this);
 }
@@ -355,6 +398,7 @@ const FilterPodImpl::Type& FilterPodImpl::GetRegisteredType(IReflectObject& s, U
 
 bool FilterPodImpl::Write(IReflectObject& s, Unique unique, void* ptr, size_t length) {
 	const Type& type = GetRegisteredType(s, unique);
+	SortTree();
 	WriteTree();
 	return PodWriteData(type.pod, &streamAdapter, ptr, this) == POD_SUCCESS;
 }

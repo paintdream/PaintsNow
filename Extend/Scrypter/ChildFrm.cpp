@@ -8,6 +8,7 @@
 #include "LeftView.h"
 #include "ScrypterView.h"
 #include "MonitorView.h"
+#include "ParameterView.h"
 #include "LogView.h"
 #include "MainFrm.h"
 
@@ -47,17 +48,28 @@ BOOL CChildFrame::OnCreateClient( LPCREATESTRUCT /*lpcs*/,
 	CCreateContext* pContext)
 {
 	// create splitter window
-	if (!m_wndSplitter.CreateStatic(this, 2, 2))
+	if (!m_wndSplitter.CreateStatic(this, 2, 1))
 		return FALSE;
 
-	if (!m_wndSplitter.CreateView(0, 0, RUNTIME_CLASS(CLogView), CSize(360, 160), pContext) ||
-		!m_wndSplitter.CreateView(0, 1, RUNTIME_CLASS(CMonitorView), CSize(360, 160), pContext) ||
-		!m_wndSplitter.CreateView(1, 0, RUNTIME_CLASS(CLeftView), CSize(360, 300), pContext) ||
-		!m_wndSplitter.CreateView(1, 1, RUNTIME_CLASS(CScrypterView), CSize(360, 300), pContext))
+	if (!m_wndSplitterUtility.CreateStatic(&m_wndSplitter, 1, 3, WS_CHILD | WS_VISIBLE, m_wndSplitter.IdFromRowCol(0, 0)))
+		return FALSE;
+
+	if (!m_wndSplitterContent.CreateStatic(&m_wndSplitter, 1, 2, WS_CHILD | WS_VISIBLE, m_wndSplitter.IdFromRowCol(1, 0)))
+		return FALSE;
+
+	if (!m_wndSplitterUtility.CreateView(0, 0, RUNTIME_CLASS(CParameterView), CSize(360, 160), pContext) ||
+		!m_wndSplitterUtility.CreateView(0, 1, RUNTIME_CLASS(CLogView), CSize(420, 160), pContext) ||
+		!m_wndSplitterUtility.CreateView(0, 2, RUNTIME_CLASS(CMonitorView), CSize(300, 160), pContext) ||
+		!m_wndSplitterContent.CreateView(0, 0, RUNTIME_CLASS(CLeftView), CSize(360, 480), pContext) ||
+		!m_wndSplitterContent.CreateView(0, 1, RUNTIME_CLASS(CScrypterView), CSize(600, 480), pContext))
 	{
+		m_wndSplitterUtility.DestroyWindow();
+		m_wndSplitterContent.DestroyWindow();
 		m_wndSplitter.DestroyWindow();
 		return FALSE;
 	}
+
+	m_wndSplitter.SetRowInfo(0, 160, 0);
 
 	return TRUE;
 }
@@ -72,8 +84,6 @@ BOOL CChildFrame::PreCreateWindow(CREATESTRUCT& cs)
 
 	return TRUE;
 }
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 // CChildFrame diagnostics
@@ -95,7 +105,7 @@ void CChildFrame::Dump(CDumpContext& dc) const
 // CChildFrame message handlers
 CScrypterView* CChildFrame::GetRightPane()
 {
-	CWnd* pWnd = m_wndSplitter.GetPane(0, 1);
+	CWnd* pWnd = m_wndSplitterContent.GetPane(0, 1);
 	CScrypterView* pView = DYNAMIC_DOWNCAST(CScrypterView, pWnd);
 	return pView;
 }

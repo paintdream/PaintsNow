@@ -9,6 +9,7 @@
 #include "../../Utility/LeavesFlute/Platform.h"
 #ifdef _WIN32
 #include <windows.h>
+#pragma comment(lib, "ws2_32.lib")
 #endif
 
 using namespace PaintsNow;

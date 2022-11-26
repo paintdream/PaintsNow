@@ -120,6 +120,10 @@ SOURCE=.\MonitorView.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\ParameterView.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\Scrypter.cpp
 # End Source File
 # Begin Source File
@@ -133,6 +137,10 @@ SOURCE=.\ScrypterDoc.cpp
 # Begin Source File
 
 SOURCE=.\ScrypterView.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\ServiceDlg.cpp
 # End Source File
 # Begin Source File
 
@@ -169,6 +177,10 @@ SOURCE=.\MonitorView.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\ParameterView.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Resource.h
 # End Source File
 # Begin Source File
@@ -182,6 +194,10 @@ SOURCE=.\ScrypterDoc.h
 # Begin Source File
 
 SOURCE=.\ScrypterView.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\ServiceDlg.h
 # End Source File
 # Begin Source File
 
@@ -575,6 +591,23 @@ SOURCE=..\..\Source\Core\Driver\Thread\Pthread\ZThreadPthread.h
 # End Source File
 # End Group
 # End Group
+# Begin Group "Network"
+
+# PROP Default_Filter ""
+# Begin Group "LibEvent"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Source\General\Driver\Network\LibEvent\ZNetworkLibEvent.cpp
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Source\General\Driver\Network\LibEvent\ZNetworkLibEvent.h
+# End Source File
+# End Group
+# End Group
 # End Group
 # Begin Group "Interface"
 
@@ -614,6 +647,15 @@ SOURCE=..\..\Source\Core\Interface\IMemory.cpp
 # Begin Source File
 
 SOURCE=..\..\Source\Core\Interface\IMemory.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Source\General\Interface\INetwork.cpp
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Source\General\Interface\INetwork.h
 # End Source File
 # Begin Source File
 
@@ -659,6 +701,15 @@ SOURCE=..\..\Source\Core\Interface\IThread.cpp
 # Begin Source File
 
 SOURCE=..\..\Source\Core\Interface\IThread.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Source\General\Interface\ITunnel.cpp
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Source\General\Interface\ITunnel.h
 # End Source File
 # Begin Source File
 
@@ -920,6 +971,28 @@ SOURCE=..\..\Source\Core\Module\CrossScriptModule.cpp
 SOURCE=..\..\Source\Core\Module\CrossScriptModule.h
 # End Source File
 # End Group
+# Begin Group "Misc"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\Source\General\Misc\Coordinator.cpp
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Source\General\Misc\Coordinator.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Source\General\Misc\RemoteCall.cpp
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Source\General\Misc\RemoteCall.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\Source\Core\PaintsNow.cpp
@@ -966,10 +1039,18 @@ SOURCE=.\Executive\Worker.cpp
 SOURCE=.\Executive\Worker.h
 # End Source File
 # End Group
+# Begin Group "Script Files"
+
+# PROP Default_Filter "lua;luac"
 # Begin Source File
 
 SOURCE=.\res\Core.lua
 # End Source File
+# Begin Source File
+
+SOURCE=.\script\datahunter.lua
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\ReadMe.txt

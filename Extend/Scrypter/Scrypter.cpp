@@ -8,11 +8,43 @@
 #include "ChildFrm.h"
 #include "ScrypterDoc.h"
 #include "LeftView.h"
+#include "LogView.h"
+#include "ServiceDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
+#endif
+
+#pragma comment(lib, "comctl32.lib")
+#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "iphlpapi.lib")
+
+#if _MSC_VER <= 1200
+	#pragma comment(lib, "libevent.lib")
+#else
+	#ifdef _M_X64
+		#ifdef _DEBUG
+			#pragma comment(lib, "../../Build64s/Source/General/Driver/Network/LibEvent/Core/lib/Debug/event.lib")
+			#pragma comment(lib, "../../Build64s/Source/General/Driver/Network/LibEvent/Core/lib/Debug/event_core.lib")
+			#pragma comment(lib, "../../Build64s/Source/General/Driver/Network/LibEvent/Core/lib/Debug/event_extra.lib")
+		#else
+			#pragma comment(lib, "../../Build64s/Source/General/Driver/Network/LibEvent/Core/lib/Release/event.lib")
+			#pragma comment(lib, "../../Build64s/Source/General/Driver/Network/LibEvent/Core/lib/Release/event_core.lib")
+			#pragma comment(lib, "../../Build64s/Source/General/Driver/Network/LibEvent/Core/lib/Release/event_extra.lib")
+		#endif
+	#else
+		#ifdef _DEBUG
+			#pragma comment(lib, "../../Build32s/Source/General/Driver/Network/LibEvent/Core/lib/Debug/event.lib")
+			#pragma comment(lib, "../../Build32s/Source/General/Driver/Network/LibEvent/Core/lib/Debug/event_core.lib")
+			#pragma comment(lib, "../../Build32s/Source/General/Driver/Network/LibEvent/Core/lib/Debug/event_extra.lib")
+		#else
+			#pragma comment(lib, "../../Build32s/Source/General/Driver/Network/LibEvent/Core/lib/Release/event.lib")
+			#pragma comment(lib, "../../Build32s/Source/General/Driver/Network/LibEvent/Core/lib/Release/event_core.lib")
+			#pragma comment(lib, "../../Build32s/Source/General/Driver/Network/LibEvent/Core/lib/Release/event_extra.lib")
+		#endif
+	#endif
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -21,8 +53,7 @@ static char THIS_FILE[] = __FILE__;
 BEGIN_MESSAGE_MAP(CScrypterApp, CWinApp)
 	//{{AFX_MSG_MAP(CScrypterApp)
 	ON_COMMAND(ID_APP_ABOUT, OnAppAbout)
-		// NOTE - the ClassWizard will add and remove mapping macros here.
-		//    DO NOT EDIT what you see in these blocks of generated code!
+	ON_COMMAND(IDC_CONFIG_SERVICE, OnConfigService)
 	//}}AFX_MSG_MAP
 	// Standard file based document commands
 	ON_COMMAND(ID_FILE_NEW, CWinApp::OnFileNew)
@@ -59,6 +90,12 @@ BOOL CScrypterApp::InitInstance()
 
 	AfxEnableControlContainer();
 
+	DWORD err = ::GetLastError();
+	INITCOMMONCONTROLSEX icex;
+	icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
+	icex.dwICC = ICC_WIN95_CLASSES;
+	InitCommonControlsEx(&icex);
+
 	WCHAR exeFilePath[MAX_PATH * 4];
 	::GetModuleFileNameW(nullptr, exeFilePath, MAX_PATH * 4);
 	m_exeFilePath = exeFilePath;
@@ -68,7 +105,19 @@ BOOL CScrypterApp::InitInstance()
 
 	SYSTEM_INFO sysinfo;
 	::GetSystemInfo(&sysinfo);
-	m_executive.Reset(new PaintsNow::Executive(sysinfo.dwNumberOfProcessors, SystemToUtf8(String((const char*)exeFilePath, wcslen(exeFilePath) * 2))));
+
+	HRSRC h = ::FindResource(nullptr, MAKEINTRESOURCE(IDR_LUA_CORE), _T("LUA"));
+	assert(h != nullptr);
+    size_t size = ::SizeofResource(NULL, h);
+	String bootstrapCode;
+	bootstrapCode.resize(size);
+    HGLOBAL data = ::LoadResource(NULL, h);
+	assert(data != 0);
+    void* p = ::LockResource(data);
+	memcpy(const_cast<char*>(bootstrapCode.c_str()), p, size);
+	::UnlockResource(data);
+
+	m_executive.Reset(new PaintsNow::Executive(sysinfo.dwNumberOfProcessors, SystemToUtf8(String((const char*)exeFilePath, wcslen(exeFilePath) * 2)), bootstrapCode));
 
 	// Standard initialization
 	// If you are not using these features and wish to reduce the size
@@ -117,6 +166,9 @@ BOOL CScrypterApp::InitInstance()
 	// Parse command line for standard shell commands, DDE, file open
 	CCommandLineInfo cmdInfo;
 	ParseCommandLine(cmdInfo);
+
+	if (cmdInfo.m_nShellCommand == CCommandLineInfo::FileNew)
+		cmdInfo.m_nShellCommand = CCommandLineInfo::FileNothing;
 
 	// Dispatch commands specified on the command line
 	if (!ProcessShellCommand(cmdInfo))
@@ -182,6 +234,12 @@ void CScrypterApp::OnAppAbout()
 	aboutDlg.DoModal();
 }
 
+void CScrypterApp::OnConfigService() 
+{
+	CServiceDlg serviceDlg;
+	serviceDlg.DoModal();
+}
+
 CString CScrypterApp::ConvertToRelativePath(const CString& inputPath)
 {
 	TCHAR target[MAX_PATH * 4];
@@ -200,11 +258,12 @@ CString CScrypterApp::ConvertToRelativePath(const CString& inputPath)
 
 int CScrypterApp::ExitInstance() 
 {
+	m_executive->Clear();
 	m_executive.Reset((Executive*)nullptr); // in case assertion fails on root TAllocator<>
 	return CWinApp::ExitInstance();
 }
 
-CString CScrypterApp::Utf8ToCString(const String& str)
+CString CScrypterApp::Utf8ToCString(StringView str)
 {
 	return (LPCWSTR)Utf8ToSystem(str).c_str();
 }
@@ -221,4 +280,16 @@ String CScrypterApp::CStringToUtf8(const CString& str)
 #else
 	return SystemToUtf8(String((const char*)(LPCWSTR)str, wcslen((LPCWSTR)str) * 2));
 #endif
+}
+
+BOOL CScrypterApp::OnIdle(LONG lCount) 
+{
+	if (CWinApp::OnIdle(lCount))
+		return TRUE;
+
+	CDocument* activeDocument = static_cast<CMainFrame*>(GetMainWnd())->GetMDIActiveDocument();
+	if (activeDocument != nullptr)
+		activeDocument->UpdateAllViews(nullptr, UPDATEVIEW_IDLE);
+
+	return FALSE;
 }

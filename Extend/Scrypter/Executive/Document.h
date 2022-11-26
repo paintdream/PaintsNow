@@ -7,82 +7,125 @@
 
 namespace PaintsNow
 {
-	class Executive;
-	struct ParameterData
+	struct ParameterData final : public TReflected<ParameterData, IReflectObjectComplex>
 	{
+		TObject<IReflect>& operator () (IReflect& reflect) override;
+
 		String name;
-		String caption;
+		String description;
 		String type;
 		String value;
 	};
 
 	struct RecordData
 	{
-		Bytes path;
-		Bytes content;
+		StringView object;
+		StringView description;
+		StringView cookie;
+	};
+
+	struct LogData
+	{
+		StringView text;
 	};
 
 	struct RuntimeData
 	{
-		BytesCache recordDataCache;
-		TQueueList<RecordData> recordData;
+		RuntimeData();
+		RuntimeData(rvalue<RuntimeData> rhs);
+		RuntimeData(const RuntimeData& rhs);
+
+		void Clear();
+		StringView CacheStringView(StringView view);
+
+		TQueueList<uint8_t> memoryCache;
+		TQueueList<RecordData> recordDataItems;
+		TQueueList<LogData> logDataItems;
 	};
 
-	class Document : public TReflected<Document, WarpTiny>
+	struct ProfileData
+	{
+		ProfileData();
+
+		String status;
+		String detail;
+		float ratio;
+	};
+
+	class Document final : public TReflected<Document, WarpTiny>
 	{
 	public:
 		enum STATUS
 		{
 			DOCUMENT_IDLE,
-			DOCUMENT_CREATING,
-			DOCUMENT_LOADING,
-			DOCUMENT_SAVING,
 			DOCUMENT_EXECUTING,
-			DOCUMENT_UPLOAD_PARAMS,
-			DOCUMENT_DOWNLOAD_PARAMS,
+			DOCUMENT_EXTERNAL_LOCKING,
 			DOCUMENT_ERROR
 		};
 
-		Document(Executive& executive, uint32_t warp);
+		Document(Kernel& kernel, IArchive& archive, Worker& mainWorker, const TWrapper<void, Document*>& onUpdate);
 		~Document() override;
 
-		bool InvokeLoad();
-		bool InvokeSave();
-		bool InvokeUploadParams();
-		bool InvokeDownloadParams();
+		bool InvokeGetOperations();
+		bool InvokeUploadParameters();
+		bool InvokeDownloadParameters();
 		bool InvokeMain();
-		void WriteOutput(StringView path, StringView content);
+		bool InvokeReload();
+		bool InvokeOperation(size_t operationIndex, rvalue<std::vector<const RecordData*> > recordData);
+
+		void WriteRecord(StringView path, StringView description, StringView cookie);
+		void WriteLog(StringView content);
+		void UpdateProfile(StringView status, StringView detail, float ratio);
 
 		const String& GetPluginPath() const;
 		void SetPluginPath(const String& path);
-		const String& GetDocument() const;
-		void SetDocument(const String& content);
-		const std::vector<ParameterData>& GetParameters() const;
-		void SetParameters(rvalue<std::vector<ParameterData> >);
+		size_t GetParametersVersion() const;
+		const std::vector<RuntimeData>& GetRuntimeData() const;
+		std::vector<ParameterData>& GetParameters();
+		const std::vector<String>& GetOperations() const;
+		const ProfileData& GetProfile() const;
 		void ClearError();
+		void Clear();
+
+		bool AcquireLock();
+		void ReleaseLock();
+		void PreSerialize(bool save);
+		void PostSerialize(bool save);
+		void PrepareCall();
+		void CompleteCall();
 
 		STATUS GetStatus() const;
-		bool UpdateStatus(StringView status, StringView detail, float ratio);
+		TShared<Document> PushDocument();
+		void PopDocument(const TShared<Document>& doc);
+		TObject<IReflect>& operator () (IReflect& reflect) override;
 
 	protected:
 		String LoadScriptText(const String& filePath);
+		RuntimeData& GetCurrentRuntimeData();
+		void OnUpdate();
 
 	protected:
-		void RoutineLoad();
-		void RoutineSave();
-		void RoutineUploadParams();
-		void RoutineDownloadParams();
+		void RoutineGetOperations();
+		void RoutineUploadParameters();
+		void RoutineDownloadParameters();
 		void RoutineMain();
+		void RoutineReload();
+		void RoutineOperation(size_t operationIndex, const std::vector<const RecordData*>& recordData);
 
 	protected:
-		Executive& executive;
+		Kernel& kernel;
+		IArchive& archive;
 		Worker& mainWorker;
 		std::atomic<size_t> status;
+		size_t parametersVersion;
 		std::vector<ParameterData> parameters;
 		std::vector<RuntimeData> runtimeData;
 		IScript::Request::Ref commandController;
+		TWrapper<void, Document*> onUpdate;
+		std::atomic<size_t> callCounter;
+		std::vector<String> operations;
 		String pluginPath;
-		String document;
+		ProfileData profileData;
 	};
 
 }

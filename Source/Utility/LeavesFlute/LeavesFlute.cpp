@@ -631,7 +631,7 @@ size_t LeavesFlute::RequestLoadLibrary(IScript::Request& request, const String& 
 			}
 		}
 
-		return (size_t)0;
+		return (size_t)m;
 	}
 #endif
 
@@ -937,7 +937,7 @@ public:
 };
 
 IPlugin::Script* LeavesFlute::AllocateScript() {
-	TShared<CrossScript> crossScript = crossScriptModule.New(false);
+	TShared<CrossScript> crossScript = crossScriptModule.New(false, false);
 	crossScript->ReferenceObject();
 	return reinterpret_cast<IPlugin::Script*>(crossScript());
 }

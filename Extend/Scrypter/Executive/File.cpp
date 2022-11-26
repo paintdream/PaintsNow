@@ -2,7 +2,7 @@
 using namespace PaintsNow;
 
 // File
-File::File(HANDLE file, HANDLE iocp, uint32_t bufferSize) : fileHandle(file), iocpHandle(iocp)
+File::File(Document* doc, HANDLE file, HANDLE iocp, uint32_t bufferSize) : document(doc), fileHandle(file), iocpHandle(iocp)
 {
 	buffer.resize(bufferSize);
 	memset(&overlapped, 0, sizeof(overlapped));
@@ -87,5 +87,10 @@ IScript::Request::Ref File::GetCallback() const
 void File::SetCallback(const IScript::Request::Ref& cb)
 {
 	callback = cb;
+}
+
+Document* File::GetDocument() const
+{
+	return document();
 }
 

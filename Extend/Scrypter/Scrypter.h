@@ -30,20 +30,21 @@ public:
 	public:
 	virtual BOOL InitInstance();
 	virtual int ExitInstance();
+	virtual BOOL OnIdle(LONG lCount);
 	//}}AFX_VIRTUAL
 
 	CString ConvertToRelativePath(const CString& inputPath);
 	CString m_exeFilePath;
 	CString m_exeFileFolder;
 	PaintsNow::TUnique<PaintsNow::Executive> m_executive;
-	static CString Utf8ToCString(const PaintsNow::String& str);
+
+	static CString Utf8ToCString(PaintsNow::StringView str);
 	static PaintsNow::String CStringToUtf8(const CString& str);
 
 // Implementation
 	//{{AFX_MSG(CScrypterApp)
 	afx_msg void OnAppAbout();
-		// NOTE - the ClassWizard will add and remove member functions here.
-		//    DO NOT EDIT what you see in these blocks of generated code !
+	afx_msg void OnConfigService();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };
