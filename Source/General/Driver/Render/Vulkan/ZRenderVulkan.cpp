@@ -17,6 +17,7 @@
 #include <vector>
 #include <iterator>
 #include <sstream>
+#include <unordered_set>
 // #include <windows.h>
 
 #define GLFW_INCLUDE_VULKAN
@@ -283,6 +284,7 @@ public:
 	std::vector<VkCommandBuffer> frameCommandBuffers;
 	TQueueList<QueueImplVulkan*> deletedQueues;
 	VkCommandPool mainCommandPool;
+	std::atomic<size_t> counterShaderModules;
 
 	alignas(CPU_CACHELINE_SIZE) std::atomic<size_t> queueCritical;
 	alignas(CPU_CACHELINE_SIZE) std::atomic<size_t> descriptorCritical;
@@ -1184,7 +1186,37 @@ public:
 	}
 
 	static uint32_t GetLayerCount(IRender::Resource::TextureDescription& desc) {
-		return (desc.state.type != IRender::Resource::TextureDescription::TEXTURE_3D ? desc.dimension.z() : 1u) * (desc.state.type == IRender::Resource::TextureDescription::TEXTURE_2D_CUBE ? 6u : 1u);
+		return (desc.state.type != IRender::Resource::TextureDescription::TEXTURE_3D && desc.dimension.z() != 0 ? desc.dimension.z() : 1u) * (desc.state.type == IRender::Resource::TextureDescription::TEXTURE_2D_CUBE ? 6u : 1u);
+	}
+
+	static VkImageViewType GetViewType(IRender::Resource::TextureDescription& desc) {
+		switch (desc.state.type) {
+			case IRender::Resource::TextureDescription::TEXTURE_1D:
+				return desc.dimension.z() == 0 ? VK_IMAGE_VIEW_TYPE_1D : VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+			case IRender::Resource::TextureDescription::TEXTURE_2D:
+				return desc.dimension.z() == 0 ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+			case IRender::Resource::TextureDescription::TEXTURE_2D_CUBE:
+				return VK_IMAGE_VIEW_TYPE_2D;
+			case IRender::Resource::TextureDescription::TEXTURE_3D:
+				return VK_IMAGE_VIEW_TYPE_3D;
+		}
+
+		return VK_IMAGE_VIEW_TYPE_2D;
+	}
+
+	static VkImageType GetImageType(IRender::Resource::TextureDescription& desc) {
+		switch (desc.state.type) {
+			case IRender::Resource::TextureDescription::TEXTURE_1D:
+				return VK_IMAGE_TYPE_1D;
+			case IRender::Resource::TextureDescription::TEXTURE_2D:
+				return VK_IMAGE_TYPE_2D;
+			case IRender::Resource::TextureDescription::TEXTURE_2D_CUBE:
+				return VK_IMAGE_TYPE_2D;
+			case IRender::Resource::TextureDescription::TEXTURE_3D:
+				return VK_IMAGE_TYPE_3D;
+		}
+
+		return VK_IMAGE_TYPE_2D;
 	}
 
 	static UShort2 GetBlockSize(IRender::Resource::TextureDescription& desc) {
@@ -1272,7 +1304,6 @@ public:
 			dimension = desc.dimension;
 			assert(dimension.x() != 0);
 			assert(dimension.y() != 0);
-			assert(dimension.z() != 0);
 
 			VkSamplerCreateInfo samplerInfo = {};
 			samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -1289,20 +1320,7 @@ public:
 
 			VkImageCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-			switch (desc.state.type) {
-			case IRender::Resource::TextureDescription::TEXTURE_1D:
-				info.imageType = VK_IMAGE_TYPE_1D;
-				break;
-			case IRender::Resource::TextureDescription::TEXTURE_2D:
-				info.imageType = VK_IMAGE_TYPE_2D;
-				break;
-			case IRender::Resource::TextureDescription::TEXTURE_2D_CUBE:
-				info.imageType = VK_IMAGE_TYPE_2D;
-				break;
-			case IRender::Resource::TextureDescription::TEXTURE_3D:
-				info.imageType = VK_IMAGE_TYPE_3D;
-				break;
-			}
+			info.imageType = GetImageType(desc);
 
 			bool isDepthStencil = desc.state.layout == IRender::Resource::TextureDescription::DEPTH_STENCIL || desc.state.layout == IRender::Resource::TextureDescription::DEPTH || desc.state.layout == IRender::Resource::TextureDescription::STENCIL;
 
@@ -1337,13 +1355,14 @@ public:
 			VkImageViewCreateInfo viewInfo = {};
 			viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 			viewInfo.image = image;
-			viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+			viewInfo.viewType = GetViewType(desc);
 			viewInfo.format = info.format;
 			viewInfo.subresourceRange.aspectMask = desc.state.layout == IRender::Resource::TextureDescription::DEPTH ? VK_IMAGE_ASPECT_DEPTH_BIT : desc.state.layout == IRender::Resource::TextureDescription::DEPTH_STENCIL ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : desc.state.layout == IRender::Resource::TextureDescription::STENCIL ? VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 			viewInfo.subresourceRange.baseMipLevel = 0;
 			viewInfo.subresourceRange.levelCount = info.mipLevels;
 			viewInfo.subresourceRange.baseArrayLayer = 0;
-			viewInfo.subresourceRange.layerCount = info.arrayLayers;
+			viewInfo.subresourceRange.layerCount = desc.state.type == IRender::Resource::TextureDescription::TEXTURE_3D || desc.dimension.z() == 0 ? 1u : desc.dimension.z();
+
 			Verify("create image view", vkCreateImageView(device->device, &viewInfo, device->allocator, &imageView));
 
 			if (desc.state.layout == IRender::Resource::TextureDescription::DEPTH_STENCIL) {
@@ -1408,10 +1427,10 @@ public:
 
 			// TODO: only support 1/1 compression now
 			uint32_t bitDepth = desc.state.compress ? 8 : IImage::GetPixelBitDepth((IRender::Resource::TextureDescription::Format)desc.state.format, (IRender::Resource::TextureDescription::Layout)desc.state.layout);
-			uint32_t height = desc.dimension.x();
-			uint32_t width = desc.dimension.y();
+			uint32_t width = desc.dimension.x();
+			uint32_t height = desc.dimension.y();
 			uint32_t depth = desc.state.type == IRender::Resource::TextureDescription::TEXTURE_3D ? desc.dimension.z() : 1u;
-			uint32_t layer = desc.state.type == IRender::Resource::TextureDescription::TEXTURE_3D ? 1u : desc.dimension.z();
+			uint32_t layer = desc.state.type == IRender::Resource::TextureDescription::TEXTURE_3D || desc.dimension.z() == 0 ? 1u : desc.dimension.z();
 			UShort2 blockSize = GetBlockSize(desc);
 
 			std::vector<VkBufferImageCopy> regions;
@@ -2229,7 +2248,7 @@ public:
 		return BinaryInsert(stateInstances, MakeKeyValue(std::move(key), std::move(instance)))->second;
 	}
 
-	 void Delete(QueueImplVulkan& queue) {
+	void Delete(QueueImplVulkan& queue) {
 		Clear(queue);
 		delete this;
 	}
@@ -2252,6 +2271,8 @@ public:
 	void Upload(QueueImplVulkan& queue) {
 		IRender::Resource::ShaderDescription& pass = description;
 		DeviceImplVulkan* device = queue.device;
+
+		String allShaderCode;
 
 		std::vector<IShader*> shaders[Resource::ShaderDescription::END];
 		String common;
@@ -2278,24 +2299,32 @@ public:
 			String head = "";
 			uint32_t inputIndex = 0, outputIndex = 0;
 			VkShaderStageFlags stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+			String stage = "Fragment";
+
 			switch (k) {
 			case IRender::Resource::ShaderDescription::VERTEX:
 				stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+				stage = "Vertex";
 				break;
 			case IRender::Resource::ShaderDescription::TESSELLATION_CONTROL:
 				stageFlags = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+				stage = "TessControl";
 				break;
 			case IRender::Resource::ShaderDescription::TESSELLATION_EVALUATION:
 				stageFlags = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+				stage = "TessEvaluation";
 				break;
 			case IRender::Resource::ShaderDescription::GEOMETRY:
 				stageFlags = VK_SHADER_STAGE_GEOMETRY_BIT;
+				stage = "Geometry";
 				break;
 			case IRender::Resource::ShaderDescription::FRAGMENT:
 				stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+				stage = "Fragment";
 				break;
 			case IRender::Resource::ShaderDescription::COMPUTE:
 				stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+				stage = "Compute";
 				break;
 			}
 
@@ -2355,6 +2384,8 @@ public:
 			body += "\n}\n"; // make a call to our function
 
 			String fullShader = GLSLShaderGenerator::GetFrameCode() + predefines + common + head + body;
+			String piece = String("<") + stage + ">\n" + fullShader + "<" + stage + "/>\n\n";
+			allShaderCode += fullShader;
 			// Vulkan only support SPIRV shader
 			String byteCode = SPIRVCompiler::Compile((IRender::Resource::ShaderDescription::Stage)k, fullShader);
 			if (byteCode.empty()) {
@@ -2444,6 +2475,10 @@ public:
 		layoutInfo.pPushConstantRanges = nullptr;
 
 		Verify("create pipeline layout", vkCreatePipelineLayout(device->device, &layoutInfo, device->allocator, &pipelineLayout));
+
+		if (pass.compileCallback) {
+			pass.compileCallback(this, pass, IRender::Resource::ShaderDescription::END, "", allShaderCode);
+		}
 	}
 
 	VkDescriptorSetLayout descriptorSetLayoutTexture;

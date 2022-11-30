@@ -505,7 +505,7 @@ void CameraComponent::UpdateTaskData(Engine& engine, Entity* entity) {
 template <class T>
 T* QueryPort(Engine& engine, std::map<RenderPolicy*, RenderStage::Port*>& policyPortMap, RenderFlowComponent* renderFlowComponent, RenderPolicy* lastRenderPolicy, UniqueType<T>) {
 	std::map<RenderPolicy*, RenderStage::Port*>::iterator it = policyPortMap.find(lastRenderPolicy);
-	if (it != policyPortMap.end()) return it->second->QueryInterface(UniqueType<T>());
+	if (it != policyPortMap.end()) return it->second == nullptr ? nullptr : it->second->QueryInterface(UniqueType<T>());
 
 	RenderStage::Port*& port = policyPortMap[lastRenderPolicy];
 	port = renderFlowComponent->BeginPort(lastRenderPolicy->renderPortName);
@@ -624,20 +624,24 @@ void CameraComponent::CommitRenderRequests(Engine& engine, TaskData& taskData, I
 				RenderPolicy* renderPolicy = e.first;
 				if (renderPolicy != nullptr) {
 					RenderPortLightSource* portLightSource = QueryPort(engine, policyPortMap, renderFlowComponent(), renderPolicy, UniqueType<RenderPortLightSource>());
-					float dist = Math::SquareLength(element.position - viewPosition);
-					if (dist < minDist) {
-						portLightSource->cubeMapTexture = element.cubeMapTexture ? element.cubeMapTexture : portLightSource->cubeMapTexture;
-						portLightSource->skyMapTexture = element.skyMapTexture ? element.skyMapTexture : portLightSource->skyMapTexture;
-						portLightSource->cubeStrength = element.cubeStrength;
-						minDist = dist;
+					if (portLightSource != nullptr) {
+						float dist = Math::SquareLength(element.position - viewPosition);
+						if (dist < minDist) {
+							portLightSource->cubeMapTexture = element.cubeMapTexture ? element.cubeMapTexture : portLightSource->cubeMapTexture;
+							portLightSource->skyMapTexture = element.skyMapTexture ? element.skyMapTexture : portLightSource->skyMapTexture;
+							portLightSource->cubeStrength = element.cubeStrength;
+							minDist = dist;
+						}
 					}
 				}
 			}
 		}
 
 		for (std::map<RenderPolicy*, RenderPort*>::iterator ip = policyPortMap.begin(); ip != policyPortMap.end(); ++ip) {
-			ip->second->OnFrameEncodeEnd(engine);
-			renderFlowComponent->EndPort(ip->second);
+			if (ip->second != nullptr) {
+				ip->second->OnFrameEncodeEnd(engine);
+				renderFlowComponent->EndPort(ip->second);
+			}
 		}
 	}
 }

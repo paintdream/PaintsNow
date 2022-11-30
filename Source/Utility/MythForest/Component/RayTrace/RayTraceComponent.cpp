@@ -46,7 +46,7 @@ void RayTraceComponent::SetCaptureSize(Engine& engine, const UShort2& size) {
 
 		TShared<TextureResource> texture = engine.snowyStream.CreateReflectedResource(UniqueType<TextureResource>(), "", false, ResourceBase::RESOURCE_VIRTUAL);
 		IRender::Resource::TextureDescription& description = texture->description;
-		description.dimension = UShort3(size.x(), size.y(), 1);
+		description.dimension = UShort3(size.x(), size.y(), 0);
 		description.state.format = IRender::Resource::TextureDescription::UNSIGNED_BYTE;
 		description.state.layout = IRender::Resource::TextureDescription::RGBA;
 		description.data.Resize(size.x() * size.y() * sizeof(UChar4));

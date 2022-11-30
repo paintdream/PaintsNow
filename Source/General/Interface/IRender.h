@@ -101,9 +101,9 @@ namespace PaintsNow {
 				};
 
 				enum Media {
-					TEXTURE_RESOURCE,
-					RENDERBUFFER, // RenderBuffer can only be used as color/depth/stencil attachment and render buffer fetch.
-					RENDERBUFFER_FETCH,
+					TEXTURE, // SRV
+					RENDER_BUFFER, // RenderBuffer can only be used as color/depth/stencil attachment and render buffer fetch.
+					RENDER_FETCH,
 				};
 
 				enum Mip {
@@ -160,7 +160,7 @@ namespace PaintsNow {
 				struct State {
 					State() : type(TEXTURE_2D), format(UNSIGNED_BYTE), sample(LINEAR), 
 						layout(RGBA), addressU(REPEAT), addressV(REPEAT), addressW(REPEAT),
-						mip(NOMIP), media(TEXTURE_RESOURCE), immutable(1), attachment(0), pcf(0), srgb(0),
+						mip(NOMIP), media(TEXTURE), immutable(1), attachment(0), pcf(0), srgb(0),
 						compress(NONE), block(BLOCK_4X4), reserved(0) {}
 
 					inline bool operator == (const State& rhs) const {

@@ -24,7 +24,7 @@ void AntiAliasingRenderStage::PreInitialize(Engine& engine, IRender::Queue* queu
 	OutputColor.renderTargetDescription.state.format = IRender::Resource::TextureDescription::HALF;
 	OutputColor.renderTargetDescription.state.layout = IRender::Resource::TextureDescription::RGB10PACK;
 	OutputColor.renderTargetDescription.state.sample = IRender::Resource::TextureDescription::LINEAR;
-	OutputColor.renderTargetDescription.state.addressU = OutputColor.renderTargetDescription.state.addressV = OutputColor.renderTargetDescription.state.addressW = IRender::Resource::TextureDescription::MIRROR_CLAMP;
+	OutputColor.renderTargetDescription.state.addressU = OutputColor.renderTargetDescription.state.addressV = OutputColor.renderTargetDescription.state.addressW = IRender::Resource::TextureDescription::CLAMP;
 	OutputColor.renderTargetDescription.state.immutable = false;
 	OutputColor.renderTargetDescription.state.attachment = true;
 

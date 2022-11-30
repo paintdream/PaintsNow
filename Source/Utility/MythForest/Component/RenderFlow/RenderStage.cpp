@@ -208,7 +208,7 @@ void RenderStage::OnFrameResolutionUpdate(Engine& engine, IRender::Queue* resour
 		assert(width != 0 && height != 0);
 		width = verify_cast<uint16_t>(resolutionShift.x() > 0 ? Math::Max(width >> resolutionShift.x(), 2) : width << resolutionShift.x());
 		height = verify_cast<uint16_t>(resolutionShift.y() > 0 ? Math::Max(height >> resolutionShift.y(), 2) : height << resolutionShift.y());
-		renderTargetDescription.dimension = UShort3(width, height, 1);
+		renderTargetDescription.dimension = UShort3(width, height, 0);
 
 		const std::vector<PortInfo>& portInfos = GetPorts();
 		for (size_t i = 0; i < portInfos.size(); i++) {
@@ -221,7 +221,7 @@ void RenderStage::OnFrameResolutionUpdate(Engine& engine, IRender::Queue* resour
 					rt->attachedTexture->description.dimension = rt->renderTargetDescription.dimension;
 					IRender::Resource* texture = rt->attachedTexture->GetRenderResource();
 					IRender::Resource::TextureDescription& desc = *static_cast<IRender::Resource::TextureDescription*>(render.MapResource(resourceQueue, texture, 0));
-					desc = std::move(rt->attachedTexture->description);
+					desc = rt->attachedTexture->description;
 					render.UnmapResource(resourceQueue, rt->attachedTexture->GetRenderResource(), IRender::MAP_DATA_EXCHANGE);
 				}
 			}

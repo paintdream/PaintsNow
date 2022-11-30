@@ -480,7 +480,7 @@ static TShared<TextureResource> NewTexture2D(SnowyStream& snowyStream, const Str
 	IRender::Queue* renderQueue = snowyStream.GetRenderResourceManager()->GetWarpResourceQueue();
 
 	IRender::Resource::TextureDescription& description = textureResource->description;
-	description.dimension = UShort3(verify_cast<uint16_t>(width), verify_cast<uint16_t>(height), 1);
+	description.dimension = UShort3(verify_cast<uint16_t>(width), verify_cast<uint16_t>(height), 0);
 	description.state.format = IRender::Resource::TextureDescription::FLOAT;
 	description.state.layout = IRender::Resource::TextureDescription::RGBA;
 	description.state.sample = IRender::Resource::TextureDescription::LINEAR;

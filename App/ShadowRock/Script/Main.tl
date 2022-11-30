@@ -61,7 +61,7 @@ local function InitializeWorld(databasePath : string)
 	local database = Database.New(databasePath)
 	if not database then
 		print("No repostory found.")
-		return
+		-- return
 	end
 
 	local clock : Clock = HeartVioliner.NewClock(1000.0 / 64, 0) -- 80 FPS logic by default
@@ -328,7 +328,7 @@ local function InitializeWorld(databasePath : string)
 	end
 end
 
-function Main.Main()
+function Main.Main(...)
 	print("Main initializing ...")
 	print("Loading Repository Daemon ...")
 	local databasePath = "Weaver/Repository.db"
@@ -341,6 +341,13 @@ function Main.Main()
 		end
 	end
 
+	-- enable options
+	print("<Debug>")
+	for i, v in ipairs({...}) do
+		Debug[v as string] = true
+		print(v)
+	end
+	print("</Debug>")
 	_G as { any : any } ["Debug"] = Debug
 	local RepositoryDaemon = require("Script/Util/RepositoryDaemon")
 	local weaver = RepositoryDaemon:New("127.0.0.1:16384", "Database/Repository.sql", databasePath)

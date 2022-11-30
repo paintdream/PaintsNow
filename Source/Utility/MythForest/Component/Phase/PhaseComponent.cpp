@@ -286,7 +286,7 @@ void PhaseComponent::Setup(Engine& engine, uint32_t phaseCount, uint32_t taskCou
 
 		phase.depth->description.state.immutable = false;
 		phase.depth->description.state.attachment = true;
-		phase.depth->description.dimension = UShort3(resolution.x(), resolution.y(), 1);
+		phase.depth->description.dimension = UShort3(resolution.x(), resolution.y(), 0);
 		phase.depth->description.state.format = IRender::Resource::TextureDescription::FLOAT;
 		phase.depth->description.state.layout = IRender::Resource::TextureDescription::DEPTH;
 		phase.depth->Flag().fetch_or(Tiny::TINY_MODIFIED, std::memory_order_release);
@@ -295,7 +295,7 @@ void PhaseComponent::Setup(Engine& engine, uint32_t phaseCount, uint32_t taskCou
 		phase.irradiance = engine.snowyStream.CreateReflectedResource(UniqueType<TextureResource>(), ResourceBase::GenerateLocation("PhaseIrradiance", &phase), false, ResourceBase::RESOURCE_VIRTUAL);
 		phase.irradiance->description.state.immutable = false;
 		phase.irradiance->description.state.attachment = true;
-		phase.irradiance->description.dimension = UShort3(resolution.x(), resolution.y(), 1);
+		phase.irradiance->description.dimension = UShort3(resolution.x(), resolution.y(), 0);
 		phase.irradiance->description.state.format = IRender::Resource::TextureDescription::HALF;
 		phase.irradiance->description.state.layout = IRender::Resource::TextureDescription::RGBA;
 		phase.irradiance->Flag().fetch_or(Tiny::TINY_MODIFIED, std::memory_order_release);
@@ -304,7 +304,7 @@ void PhaseComponent::Setup(Engine& engine, uint32_t phaseCount, uint32_t taskCou
 		phase.baseColorOcclusion = engine.snowyStream.CreateReflectedResource(UniqueType<TextureResource>(), ResourceBase::GenerateLocation("PhaseBaseColorOcclusion", &phase), false, ResourceBase::RESOURCE_VIRTUAL);
 		phase.baseColorOcclusion->description.state.immutable = false;
 		phase.baseColorOcclusion->description.state.attachment = true;
-		phase.baseColorOcclusion->description.dimension = UShort3(resolution.x(), resolution.y(), 1);
+		phase.baseColorOcclusion->description.dimension = UShort3(resolution.x(), resolution.y(), 0);
 		phase.baseColorOcclusion->description.state.format = IRender::Resource::TextureDescription::UNSIGNED_BYTE;
 		phase.baseColorOcclusion->description.state.layout = IRender::Resource::TextureDescription::RGBA;
 		phase.baseColorOcclusion->Flag().fetch_or(Tiny::TINY_MODIFIED, std::memory_order_release);
@@ -313,7 +313,7 @@ void PhaseComponent::Setup(Engine& engine, uint32_t phaseCount, uint32_t taskCou
 		phase.normalRoughnessMetallic = engine.snowyStream.CreateReflectedResource(UniqueType<TextureResource>(), ResourceBase::GenerateLocation("PhaseNormalRoughness", &phase), false, ResourceBase::RESOURCE_VIRTUAL);
 		phase.normalRoughnessMetallic->description.state.immutable = false;
 		phase.normalRoughnessMetallic->description.state.attachment = true;
-		phase.normalRoughnessMetallic->description.dimension = UShort3(resolution.x(), resolution.y(), 1);
+		phase.normalRoughnessMetallic->description.dimension = UShort3(resolution.x(), resolution.y(), 0);
 		phase.normalRoughnessMetallic->description.state.format = IRender::Resource::TextureDescription::UNSIGNED_BYTE;
 		phase.normalRoughnessMetallic->description.state.layout = IRender::Resource::TextureDescription::RGBA;
 		phase.normalRoughnessMetallic->Flag().fetch_or(Tiny::TINY_MODIFIED, std::memory_order_relaxed);
@@ -321,7 +321,7 @@ void PhaseComponent::Setup(Engine& engine, uint32_t phaseCount, uint32_t taskCou
 
 		// create noise texture
 		phase.noiseTexture = engine.snowyStream.CreateReflectedResource(UniqueType<TextureResource>(), ResourceBase::GenerateLocation("PhaseNoise", &phase), false, ResourceBase::RESOURCE_VIRTUAL);
-		phase.noiseTexture->description.dimension = UShort3(resolution.x(), resolution.y(), 1);
+		phase.noiseTexture->description.dimension = UShort3(resolution.x(), resolution.y(), 0);
 		phase.noiseTexture->description.state.format = IRender::Resource::TextureDescription::UNSIGNED_BYTE;
 		phase.noiseTexture->description.state.layout = IRender::Resource::TextureDescription::RGBA;
 
@@ -709,7 +709,7 @@ void PhaseComponent::TaskAssembleTaskBounce(Engine& engine, TaskData& task, cons
 	desc.colorStorages.emplace_back(storage);
 	desc.depthStorage.loadOp = desc.stencilStorage.loadOp = IRender::Resource::RenderTargetDescription::DISCARD; // TODO:
 	desc.depthStorage.storeOp = desc.stencilStorage.storeOp = IRender::Resource::RenderTargetDescription::DISCARD;
-	desc.dimension = UShort3(resolution.x(), resolution.y(), 1);
+	desc.dimension = UShort3(resolution.x(), resolution.y(), 0);
 	render.UnmapResource(task.renderQueue, task.renderTarget, IRender::MAP_DATA_EXCHANGE);
 	render.ExecuteResource(task.renderQueue, statePostResource);
 	render.ExecuteResource(task.renderQueue, task.renderTarget);
@@ -903,7 +903,7 @@ void PhaseComponent::CompleteUpdateLights(Engine& engine, std::vector<LightEleme
 			shadow.shadow = engine.snowyStream.CreateReflectedResource(UniqueType<TextureResource>(), ResourceBase::GenerateLocation("PhaseShadow", &shadow), false, ResourceBase::RESOURCE_VIRTUAL);
 			shadow.shadow->description.state.immutable = false;
 			shadow.shadow->description.state.attachment = true;
-			shadow.shadow->description.dimension = UShort3(resolution.x(), resolution.y(), 1);
+			shadow.shadow->description.dimension = UShort3(resolution.x(), resolution.y(), 0);
 			shadow.shadow->description.state.format = IRender::Resource::TextureDescription::FLOAT;
 			shadow.shadow->description.state.layout = IRender::Resource::TextureDescription::DEPTH;
 			shadow.shadow->Flag().fetch_or(Tiny::TINY_MODIFIED, std::memory_order_release);

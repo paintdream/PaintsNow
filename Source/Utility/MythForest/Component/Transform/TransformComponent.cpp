@@ -39,7 +39,8 @@ void TransformComponent::GetTRS(TRSData& trsData) const {
 }
 
 void TransformComponent::SetTRS(const TRSData& trsData) {
-	WRITE_FENCE_GUARD();
+	// TODO: resolve read/write fence bug when RayTrace
+	// WRITE_FENCE_GUARD();
 
 	MatrixFloat4x4 rotMatrix;
 	trsData.rotation.WriteMatrix(rotMatrix);

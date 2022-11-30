@@ -215,6 +215,7 @@ namespace PaintsNow {
 	protected:
 		TWrapper<void, LeavesFlute&> setupHandler;
 		TWrapper<void, LeavesFlute&> consoleHandler;
+		std::atomic<size_t> looping;
 		IScript::Request::Ref listenConsole;
 		String newAppTitle;
 		String appTitle;

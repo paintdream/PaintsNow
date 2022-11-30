@@ -26,7 +26,7 @@ TShared<Hive> Remembery::RequestNewDatabase(IScript::Request& request, const Str
 		hive->SetWarpIndex(bridgeSunset.GetKernel().GetCurrentWarpIndex());
 		return hive;
 	} else {
-		request.Error("Remembery::CreateDatabase(target, username, password) : invalid target, username or password.");
+		// request.Error("Remembery::CreateDatabase(target, username, password) : invalid target, username or password.");
 		return nullptr;
 	}
 }

@@ -61,11 +61,14 @@ void TextureResource::Upload(IRender& render, void* deviceContext) {
 	if (Flag().fetch_and(~TINY_MODIFIED) & TINY_MODIFIED) {
 		assert(description.dimension.x() != 0);
 		assert(description.dimension.y() != 0);
-		assert(description.dimension.z() != 0);
 
 		// Temporal code: fix addressing for cube resource
-		if (description.state.format == IRender::Resource::TextureDescription::TEXTURE_2D_CUBE) {
+		if (description.state.type == IRender::Resource::TextureDescription::TEXTURE_2D_CUBE) {
 			description.state.addressU = description.state.addressV = description.state.addressW = IRender::Resource::TextureDescription::CLAMP;
+		}
+		
+		if (description.state.type != IRender::Resource::TextureDescription::TEXTURE_3D) {
+			description.dimension.z() = 0;
 		}
 
 		ThreadPool& threadPool = resourceManager.GetThreadPool();
@@ -263,7 +266,7 @@ bool TextureResource::LoadExternalResource(Interfaces& interfaces, IStreamBase& 
 		description.state.format = dataType;
 		description.dimension.x() = verify_cast<uint16_t>(imageBase.GetWidth(image));
 		description.dimension.y() = verify_cast<uint16_t>(imageBase.GetHeight(image));
-		description.dimension.z() = 1;
+		description.dimension.z() = 0;
 
 		void* buffer = imageBase.GetBuffer(image);
 		description.data.Assign(reinterpret_cast<uint8_t*>(buffer), (size_t)description.dimension.x() * description.dimension.y() * IImage::GetPixelBitDepth(dataType, layout) / 8);

@@ -63,6 +63,8 @@ LeavesFlute::LeavesFlute(bool ng, Interfaces& inters, const TWrapper<IArchive*, 
 #endif
 	//setvbuf(stdout, nullptr, _IOFBF, 1000);
 #endif
+	looping.store(0, std::memory_order_relaxed);
+
 	ScanModules scanModules(symbolMap, modules);
 	(*this)(scanModules);
 
@@ -152,7 +154,9 @@ void LeavesFlute::EnterMainLoop() {
 	assert(!consoleHandler);
 	IThread::Thread* consoleThread = interfaces.thread.NewThread(Wrap(this, &LeavesFlute::ConsoleProc), 0);
 
+	looping.store(1, std::memory_order_release);
 	interfaces.frame.EnterMainLoop();
+	looping.store(0, std::memory_order_release);
 	bridgeSunset.LogInfo().Printf("[LeavesFlute] Exit Standard Graphic Environment ...\n");
 #ifdef _WIN32
 	::FreeConsole();
@@ -223,7 +227,7 @@ bool LeavesFlute::ConsoleProc(IThread::Thread* thread, size_t handle) {
 	const size_t CMD_SIZE = 1024;
 	WCHAR buf[CMD_SIZE];
 #endif
-	while (true) {
+	while (looping.load(std::memory_order_acquire) != 0) {
 #ifndef WIN32
 		int ret = poll(cinfd, 1, 1000);
 		if (ret > 0 && cinfd[0].revents == POLLIN) {

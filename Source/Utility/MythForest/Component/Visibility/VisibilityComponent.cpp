@@ -79,7 +79,7 @@ void VisibilityComponent::Initialize(Engine& engine, Entity* entity) {
 	rs.stencilMask = 0;
 	render.UnmapResource(renderQueue, stateResource, IRender::MAP_DATA_EXCHANGE);
 
-	UShort3 dim(resolution.x(), resolution.y(), 1u);
+	UShort3 dim(resolution.x(), resolution.y(), 0u);
 	depthStencilResource = render.CreateResource(device, IRender::Resource::RESOURCE_TEXTURE);
 	IRender::Resource::TextureDescription& depthStencilDescription = *static_cast<IRender::Resource::TextureDescription*>(render.MapResource(renderQueue, depthStencilResource, 0));
 	depthStencilDescription.dimension = dim;
@@ -87,6 +87,7 @@ void VisibilityComponent::Initialize(Engine& engine, Entity* entity) {
 	bool supportIntegratedD24S8Format = render.GetProfile(render.GetQueueDevice(renderQueue), "DepthFormat_D24S8") != 0;
 	depthStencilDescription.state.format = (uint32_t)(supportIntegratedD24S8Format ? IRender::Resource::TextureDescription::HALF : IRender::Resource::TextureDescription::FLOAT);
 	depthStencilDescription.state.layout = IRender::Resource::TextureDescription::DEPTH_STENCIL;
+	depthStencilDescription.state.attachment = 1;
 	render.UnmapResource(renderQueue, depthStencilResource, IRender::MAP_DATA_EXCHANGE);
 
 	tasks.resize(taskCount);
@@ -101,6 +102,7 @@ void VisibilityComponent::Initialize(Engine& engine, Entity* entity) {
 		texture->description.state.attachment = true;
 		texture->description.state.format = IRender::Resource::TextureDescription::UNSIGNED_BYTE;
 		texture->description.state.layout = IRender::Resource::TextureDescription::RGBA;
+		texture->description.state.attachment = 1;
 		texture->Flag().fetch_or(Tiny::TINY_MODIFIED, std::memory_order_release);
 		texture->GetResourceManager().InvokeUpload(texture(), renderQueue);
 

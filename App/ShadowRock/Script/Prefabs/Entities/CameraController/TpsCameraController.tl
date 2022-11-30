@@ -17,14 +17,16 @@ end
 
 TpsCameraController.__index = TpsCameraController
 
+local Debug = require("Script/Util/Debug")
 local StandardCamera = require("Script/Prefabs/Components/Camera/StandardCamera")
 local StandardRenderFlow = require("Script/Prefabs/Components/RenderFlow/StandardRenderFlow")
+local UIOnlyRenderFlow = require("Script/Prefabs/Components/RenderFlow/UIOnlyRenderFlow")
 local Phase = require("Script/Prefabs/Components/Phase/StandardPhase")
 local Vector = require("Engine/Model/Math/Vector")
 
 function TpsCameraController.New(eventComponent : EventComponent) : TpsCameraController
 	local entity = MythForest.NewEntity(-1)
-	local renderFlowComponent = StandardRenderFlow.New(3)
+	local renderFlowComponent = Debug["UIOnly"] and UIOnlyRenderFlow.New() or StandardRenderFlow.New(3)
 	local cameraComponent = StandardCamera.New(renderFlowComponent)
 	local transformComponent = TransformComponentModule.New()
 	local inputTransformComponent = TransformComponentModule.New() -- not mounted

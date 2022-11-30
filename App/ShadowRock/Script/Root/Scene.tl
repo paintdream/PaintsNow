@@ -12,6 +12,8 @@ local Core = require("Engine/Core")
 local Database = require("Engine/Model/Database")
 
 function Scene.New(database : Database, clock : Clock) : Scene
+	print("Loading scene ...")
+	
 	local meta = {} as Scene
 	local rootEntity = MythForest.NewEntity(-1)
 	local spaceComponent = SpaceComponentModule.New(-1, false)

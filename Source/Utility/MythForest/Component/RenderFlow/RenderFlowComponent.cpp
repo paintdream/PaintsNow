@@ -56,7 +56,7 @@ void RenderFlowComponent::RemoveNode(RenderStage* stage) {
 
 RenderStage::Port* RenderFlowComponent::BeginPort(const String& symbol) {
 	std::map<String, std::pair<RenderStage*, String> >::const_iterator s = symbolMap.find(symbol);
-	if (s != symbolMap.end()) {
+	if (s != symbolMap.end() && s->second.first != nullptr) {
 		RenderStage::Port* port = (*s->second.first)[s->second.second];
 		assert(!(port->Flag().load(std::memory_order_acquire) & TINY_ACTIVATED)); // no shared
 		port->Flag().fetch_or(TINY_ACTIVATED, std::memory_order_relaxed);
@@ -260,7 +260,7 @@ void RenderFlowComponent::ResolveSamplessAttachments() {
 					if (loader == nullptr || loader->GetLinks().empty()) {
 						targetUnions[rt] = rt;
 						// set sampless as default.
-						rt->renderTargetDescription.state.media = IRender::Resource::TextureDescription::RENDERBUFFER;
+						rt->renderTargetDescription.state.media = IRender::Resource::TextureDescription::RENDER_BUFFER;
 					} else {
 						RenderPortRenderTargetStore* parent = loader->GetLinks().back().port->QueryInterface(UniqueType<RenderPortRenderTargetStore>());
 						assert(parent != nullptr);
@@ -271,7 +271,7 @@ void RenderFlowComponent::ResolveSamplessAttachments() {
 					for (size_t n = 0; n < rt->GetLinks().size(); n++) {
 						RenderPortTextureInput* input = rt->GetLinks()[n].port->QueryInterface(UniqueType<RenderPortTextureInput>());
 						if (input != nullptr) {
-							targetUnions[rt]->renderTargetDescription.state.media = IRender::Resource::TextureDescription::TEXTURE_RESOURCE;
+							targetUnions[rt]->renderTargetDescription.state.media = IRender::Resource::TextureDescription::TEXTURE;
 							break;
 						}
 					}

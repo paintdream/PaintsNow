@@ -1,6 +1,7 @@
 -- StandardRenderFlow.tl
 -- 
 local StandardRenderFlow = {}
+local Debug = require("Script/Util/Debug")
 
 function StandardRenderFlow.New(bloomLayerCount : number) : RenderFlowComponent
 	local renderFlowComponent = RenderFlowComponentModule.New()
@@ -11,7 +12,7 @@ function StandardRenderFlow.New(bloomLayerCount : number) : RenderFlowComponent
 		print("StandardRenderFlow: ComputeShader not supported by this device, fallback to texture encoded light.")
 	end
 
-	local debugSSR = false
+	local debugSSR = Debug["DebugSSR"] as boolean
 
 	-- Step 1: Setup Geometry stage
 	local stageGeometryBuffer : RenderStage = renderFlowComponent:NewRenderStage("GeometryBufferRenderStage", "")

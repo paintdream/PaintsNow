@@ -131,7 +131,7 @@ void RenderResourceManager::CreateBuiltinSolidTexture(const String& path, const 
 	const int width = 2, height = 2;
 	textureResource->description.dimension.x() = width;
 	textureResource->description.dimension.y() = height;
-	textureResource->description.dimension.z() = 1;
+	textureResource->description.dimension.z() = 0;
 	textureResource->description.data.Resize(width * height * sizeof(UChar4));
 
 	UChar4* buffer = reinterpret_cast<UChar4*>(textureResource->description.data.GetData());

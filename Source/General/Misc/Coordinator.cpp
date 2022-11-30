@@ -108,7 +108,7 @@ bool Coordinator::RpcPush(RemoteCall& remoteCall, ProtoOutputPush& outputPacket,
 	ProtoInputPull request;
 	ProtoInputPush& input = inputPacket;
 	request.cookie = input.cookie;
-	context->Invoke("RpcPull", request, Wrap(this, &Coordinator::RetPull));
+	context->Invoke("RpcPull", std::move(request), Wrap(this, &Coordinator::RetPull));
 	return true;
 }
 

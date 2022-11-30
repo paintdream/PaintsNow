@@ -119,16 +119,17 @@ void LightComponent::ShadowLayer::StreamRefreshHandler(Engine& engine, const USh
 		IRender::Resource::TextureDescription depthStencilDescription;
 		depthStencilDescription.dimension = dim;
 		depthStencilDescription.state.format = IRender::Resource::TextureDescription::FLOAT;
-		depthStencilDescription.state.layout = IRender::Resource::TextureDescription::DEPTH;
+		depthStencilDescription.state.layout = IRender::Resource::TextureDescription::DEPTH_STENCIL;
 
 		TShared<TextureResource> texture = engine.snowyStream.CreateReflectedResource(UniqueType<TextureResource>(), ResourceBase::GenerateLocation("LightShadowDepth", tiny()), false, ResourceBase::RESOURCE_VIRTUAL);
 		texture->description.dimension = dim;
-		texture->description.state.attachment = true;
+		texture->description.state.attachment = 1;
 		texture->description.state.format = IRender::Resource::TextureDescription::FLOAT;
-		texture->description.state.layout = IRender::Resource::TextureDescription::DEPTH;
+		texture->description.state.layout = IRender::Resource::TextureDescription::DEPTH_STENCIL;
 		texture->description.state.addressU = texture->description.state.addressV = texture->description.state.addressW = IRender::Resource::TextureDescription::CLAMP;
 		texture->description.state.sample = IRender::Resource::TextureDescription::POINT;
-		texture->description.state.pcf = true;
+		texture->description.state.pcf = 1;
+
 		texture->Flag().fetch_or(Tiny::TINY_MODIFIED, std::memory_order_relaxed);
 		texture->GetResourceManager().InvokeUpload(texture(), taskData->renderQueue);
 		shadowGrid->texture = texture;
@@ -576,7 +577,7 @@ void LightComponent::ShadowLayer::Initialize(Engine& engine, const TShared<Strea
 	}
 
 	TShared<TextureResource> texture = engine.snowyStream.CreateReflectedResource(UniqueType<TextureResource>(), ResourceBase::GenerateLocation("LightShadowBakeDummy", this), false, ResourceBase::RESOURCE_VIRTUAL);
-	texture->description.dimension = UShort3(res.x(), res.y(), 1);
+	texture->description.dimension = UShort3(res.x(), res.y(), 0);
 	texture->description.state.attachment = true;
 	texture->description.state.format = IRender::Resource::TextureDescription::UNSIGNED_BYTE;
 	texture->description.state.layout = IRender::Resource::TextureDescription::R;

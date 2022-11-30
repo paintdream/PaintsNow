@@ -120,7 +120,7 @@ uint32_t RenderPortRenderTargetLoad::OnSetupRenderTarget(Engine& engine, IRender
 RenderPortRenderTargetStore::RenderPortRenderTargetStore(IRender::Resource::RenderTargetDescription::Storage& storage) : bindingStorage(storage) {
 	renderTargetDescription.state.attachment = true;
 	renderTargetDescription.state.immutable = false;
-	renderTargetDescription.dimension = UShort3(1, 1, 1);
+	renderTargetDescription.dimension = UShort3(1, 1, 0);
 }
 
 TObject<IReflect>& RenderPortRenderTargetStore::operator () (IReflect& reflect) {

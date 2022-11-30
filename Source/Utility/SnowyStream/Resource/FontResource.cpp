@@ -162,7 +162,7 @@ uint32_t FontResource::Slice::UpdateFontTexture(IRender& render, IRender::Queue*
 				desc.state.layout = IRender::Resource::TextureDescription::R;
 				desc.dimension.x() = dim;
 				desc.dimension.y() = dim;
-				desc.dimension.z() = 1u;
+				desc.dimension.z() = 0;
 
 				render.UnmapResource(queue, ptr(), IRender::MAP_DATA_EXCHANGE);
 				ptr.Tag(0);

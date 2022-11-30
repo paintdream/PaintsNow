@@ -590,14 +590,13 @@ public:
 		Resource::TextureDescription& d = description;
 		assert(d.dimension.x() != 0);
 		assert(d.dimension.y() != 0);
-		assert(d.dimension.z() != 0);
 
 		// Convert texture format
 		GLuint srcLayout, srcDataType, format;
 		uint32_t bitDepth = ParseFormatFromState(srcLayout, srcDataType, format, d.state);
 		textureFormat = format;
 
-		if (d.state.media == IRender::Resource::TextureDescription::RENDERBUFFER) {
+		if (d.state.media == IRender::Resource::TextureDescription::RENDER_BUFFER) {
 			assert(d.data.Empty());
 			if (renderbufferID == 0) {
 				glGenRenderbuffers(1, &renderbufferID);
@@ -621,7 +620,7 @@ public:
 
 		const void* data = d.data.Empty() ? nullptr : d.data.GetData();
 		textureType = GL_TEXTURE_2D;
-		if (d.state.type == Resource::TextureDescription::TEXTURE_3D || d.dimension.z() <= 1) {
+		if (d.state.type == Resource::TextureDescription::TEXTURE_3D || d.dimension.z() == 0) {
 			switch (d.state.type) {
 				case Resource::TextureDescription::TEXTURE_1D:
 				{
@@ -629,7 +628,7 @@ public:
 					glBindTexture(textureType = GL_TEXTURE_1D, textureID);
 					if (d.state.compress) {
 						assert(data != nullptr);
-						glCompressedTexImage1D(textureType, 0, format, d.dimension.x(), 0, bitDepth * d.dimension.x() / 8, data);
+						glCompressedTexImage1D(textureType, 0, format, d.dimension.x(), 0, bitDepth / 8, data);
 					} else {
 						if (d.state.immutable && glTexStorage1D != nullptr) {
 							if (newTexture) {
@@ -760,7 +759,6 @@ public:
 				{
 					GL_GUARD();
 					glBindTexture(textureType = GL_TEXTURE_2D_ARRAY, textureID);
-					assert(d.data.GetSize() % d.dimension.z() == 0);
 					if (d.state.compress) {
 						assert(data != nullptr);
 						glCompressedTexImage3D(textureType, 0, format, d.dimension.x(), d.dimension.y(), d.dimension.z(), 0, bitDepth * d.dimension.x() * d.dimension.y() * d.dimension.z() / 8, data);
@@ -905,7 +903,7 @@ public:
 		GL_GUARD();
 
 		if (textureID != 0) {
-			if (description.state.media != IRender::Resource::TextureDescription::TEXTURE_RESOURCE) {
+			if (description.state.media != IRender::Resource::TextureDescription::TEXTURE) {
 				glDeleteRenderbuffers(1, &renderbufferID);
 			} else {
 				glDeleteTextures(1, &textureID);
@@ -1378,7 +1376,7 @@ public:
 		GL_GUARD();
 		TSpinLockGuard<size_t> lockGuard(critical);
 		Resource::RenderTargetDescription& d = description;
-		assert(d.dimension.x() != 0 && d.dimension.y() != 0 && d.dimension.z() != 0);
+		assert(d.dimension.x() != 0 && d.dimension.y() != 0);
 
 		// Not back buffer
 		if (vertexArrayID == 0) {
@@ -1407,7 +1405,7 @@ public:
 
 			if (desc.state.layout == IRender::Resource::TextureDescription::DEPTH_STENCIL) { // DEPTH_STENCIL
 				assert(s == nullptr || t == s);
-				if (desc.state.media == IRender::Resource::TextureDescription::RENDERBUFFER) {
+				if (desc.state.media == IRender::Resource::TextureDescription::RENDER_BUFFER) {
 					glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, t->renderbufferID);
 				} else if (t->textureType == GL_TEXTURE_2D) {
 					glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, t->textureID, d.depthStorage.mipLevel);
@@ -1415,7 +1413,7 @@ public:
 					glFramebufferTexture3D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_3D, t->textureID, d.depthStorage.mipLevel, d.depthStorage.layer);
 				}
 			} else { // may not be supported on all platforms
-				if (desc.state.media == IRender::Resource::TextureDescription::RENDERBUFFER) {
+				if (desc.state.media == IRender::Resource::TextureDescription::RENDER_BUFFER) {
 					glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, t->renderbufferID);
 				} else if (t->textureType == GL_TEXTURE_2D) {
 					glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, t->textureID, d.depthStorage.mipLevel);
@@ -1425,7 +1423,7 @@ public:
 
 				if (s != nullptr) {
 					IRender::Resource::TextureDescription& descs = s->description;
-					if (descs.state.media == IRender::Resource::TextureDescription::RENDERBUFFER) {
+					if (descs.state.media == IRender::Resource::TextureDescription::RENDER_BUFFER) {
 						glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, s->renderbufferID);
 					} else if (t->textureType == GL_TEXTURE_2D) {
 						glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, t->textureID, d.stencilStorage.mipLevel);
@@ -1446,7 +1444,7 @@ public:
 			ResourceImplOpenGL<IRender::Resource::TextureDescription>* t = static_cast<ResourceImplOpenGL<IRender::Resource::TextureDescription>*>(storage.resource);
 			assert(t != nullptr);
 			assert(t->textureID != 0);
-			if (t->description.state.media == IRender::Resource::TextureDescription::RENDERBUFFER) {
+			if (t->description.state.media == IRender::Resource::TextureDescription::RENDER_BUFFER) {
 				glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + (GLsizei)i, GL_RENDERBUFFER, t->renderbufferID);
 			} else if (t->textureType == GL_TEXTURE_2D) {
 				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + (GLsizei)i, GL_TEXTURE_2D, t->textureID, storage.mipLevel);
