@@ -41,19 +41,22 @@ void FrameBarrierRenderStage::OnFrameResolutionUpdate(Engine& engine, IRender::Q
 	}
 }
 
-void FrameBarrierRenderStage::OnFrameUpdate(Engine& engine, IRender::Queue* queue) {}
+void FrameBarrierRenderStage::OnFrameUpdate(Engine& engine, IRender::Queue* queue) {
+	if (Front.textureResource) {
+		Next.renderTargetDescription.state = Front.textureResource->description.state;
+	}
+}
+
 uint32_t FrameBarrierRenderStage::OnFrameCommit(Engine& engine, std::vector<IRender::Queue*>& queues, IRender::Queue* instantMainQueue) { return 0; }
 
 void FrameBarrierRenderStage::OnFrameTick(Engine& engine, IRender::Queue* queue) {
 	BaseClass::OnFrameTick(engine, queue);
 	if (Front.GetLinks().empty()) return;
+	assert(Next.renderTargetDescription.state == Front.textureResource->description.state);
 
-	if (!Next.attachedTexture ||
-		Front.textureResource->description.state != Next.renderTargetDescription.state
+	if (!Next.attachedTexture
 		|| Front.textureResource->description.dimension.x() != Next.renderTargetDescription.dimension.x()
 		|| Front.textureResource->description.dimension.y() != Next.renderTargetDescription.dimension.y()) {
-
-		Next.renderTargetDescription.state = Front.textureResource->description.state;
 		assert(Next.renderTargetDescription.state.attachment);
 		Next.renderTargetDescription.dimension.x() = Front.textureResource->description.dimension.x();
 		Next.renderTargetDescription.dimension.y() = Front.textureResource->description.dimension.y();
@@ -61,7 +64,6 @@ void FrameBarrierRenderStage::OnFrameTick(Engine& engine, IRender::Queue* queue)
 			Next.attachedTexture = engine.snowyStream.CreateReflectedResource(UniqueType<TextureResource>(), ResourceBase::GenerateLocation("Swap", this), false, ResourceBase::RESOURCE_VIRTUAL);
 		}
 
-		Next.attachedTexture->description.state = Next.renderTargetDescription.state;
 		Next.attachedTexture->description.dimension = Next.renderTargetDescription.dimension;
 		Next.attachedTexture->Flag().fetch_or(TINY_MODIFIED, std::memory_order_relaxed);
 		Next.attachedTexture->GetResourceManager().InvokeUpload(Next.attachedTexture(), queue);
