@@ -2882,7 +2882,7 @@ void VulkanDrawCallResourceBase::UploadImpl(QueueImplVulkan& queue, IRender::Res
 		desc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		desc.dstSet = descriptorSetUniformBuffer;
 		desc.dstBinding = shader->uniformBufferBindings[m].binding;
-		desc.descriptorCount = verify_cast<uint32_t>(uniformBufferInfos.size());
+		desc.descriptorCount = 1;
 		desc.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		desc.pBufferInfo = &uniformBufferInfos[m];
 		vkUpdateDescriptorSets(device->device, 1, &desc, 0, nullptr);
@@ -2894,7 +2894,7 @@ void VulkanDrawCallResourceBase::UploadImpl(QueueImplVulkan& queue, IRender::Res
 		desc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		desc.dstSet = descriptorSetStorageBuffer;
 		desc.dstBinding = shader->storageBufferBindings[t].binding;
-		desc.descriptorCount = verify_cast<uint32_t>(storageBufferInfos.size());
+		desc.descriptorCount = 1;
 		desc.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		desc.pBufferInfo = &storageBufferInfos[t];
 		vkUpdateDescriptorSets(device->device, 1, &desc, 0, nullptr);

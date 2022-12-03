@@ -153,6 +153,7 @@ void LeavesFlute::EnterMainLoop() {
 
 	assert(!consoleHandler);
 	IThread::Thread* consoleThread = interfaces.thread.NewThread(Wrap(this, &LeavesFlute::ConsoleProc), 0);
+	interfaces.thread.SetThreadName(consoleThread, "Console Thread");
 
 	looping.store(1, std::memory_order_release);
 	interfaces.frame.EnterMainLoop();

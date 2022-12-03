@@ -23,6 +23,7 @@ namespace PaintsNow {
 	
 		static uint32_t GetCurrentNativeThreadId();
 		virtual Thread* NewThread(const TWrapper<bool, Thread*, size_t>& wrapper, size_t index) = 0;
+		virtual void SetThreadName(Thread* thread, const String& name) = 0;
 		virtual bool IsThreadRunning(Thread* thread) const = 0;
 		virtual void Wait(Thread* thread) = 0;
 		virtual void DeleteThread(Thread* thread) = 0;

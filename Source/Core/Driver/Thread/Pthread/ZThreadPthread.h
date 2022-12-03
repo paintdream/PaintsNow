@@ -12,6 +12,7 @@ namespace PaintsNow {
 		ZThreadPthread();
 		~ZThreadPthread() override;
 		IThread::Thread* NewThread(const TWrapper<bool, IThread::Thread*, size_t>& wrapper, size_t index) override;
+		void SetThreadName(Thread* thread, const String& name) override;
 		bool IsThreadRunning(Thread* thread) const override;
 		void Wait(Thread* thread) override;
 		void DeleteThread(Thread* thread) override;

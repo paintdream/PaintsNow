@@ -868,7 +868,10 @@ void ZNetworkLibEvent::SetHttpRequestData(HttpRequest* request, const String& da
 
 ITunnel::Dispatcher* ZNetworkLibEvent::OpenDispatcher() {
 	DispatcherLibEventImpl* p = new DispatcherLibEventImpl();
-	p->base = event_base_new();
+	struct event_config *cfg = event_config_new();
+	event_config_set_num_cpus_hint(cfg, 1);
+	p->base = event_base_new_with_config(cfg);
+	event_config_free(cfg);
 	p->dns = evdns_base_new(p->base, 1);
 #ifdef _DEBUG
 	p->referCount = 0;

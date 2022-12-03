@@ -38,6 +38,7 @@ void Looper::AsyncActivate(IScript::Request& request) {
 	request.UnLock();
 
 	thread = threadApi.NewThread(Wrap(this, &Looper::ActivateRoutine), reinterpret_cast<size_t>(info));
+	threadApi.SetThreadName(thread, "EchoLegend::Looper");
 }
 
 String Looper::EventToString(INetwork::EVENT event) {

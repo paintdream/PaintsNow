@@ -74,6 +74,9 @@ void ThreadPool::Initialize() {
 	for (size_t k = 0; k < threadInfos.size(); k++) {
 		ThreadInfo& info = threadInfos[k];
 		info.threadHandle = threadApi.NewThread(Wrap(this, &ThreadPool::Run), k);
+		char threadName[64];
+		sprintf(threadName, "ThreadPool Worker %d", (int)k);
+		threadApi.SetThreadName(info.threadHandle, threadName);
 	}
 }
 

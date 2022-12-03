@@ -1,6 +1,6 @@
 #include "ZThreadPthread.h"
 
-#if defined(_DEBUG) && defined(_MSC_VER)
+#ifdef _WIN32
 #include <Windows.h>
 #endif
 
@@ -160,6 +160,48 @@ IThread::Thread* ZThreadPthread::NewThread(const TWrapper<bool, IThread::Thread*
 #endif
 
 	return t;
+}
+
+void ZThreadPthread::SetThreadName(Thread* thread, const String& name) {
+#ifdef _WIN32
+#ifdef USE_STD_THREAD
+	ThreadImpl* t = static_cast<ThreadImpl*>(thread);
+	std::thread::id id = t->thread.get_id();
+	DWORD threadID = *reinterpret_cast<DWORD*>(&id);
+	/*
+	typedef HRESULT(WINAPI *PFNSetThreadDescription)(HANDLE hThread, PCWSTR lpThreadDescription);
+	PFNSetThreadDescription setThreadDescription = (PFNSetThreadDescription)::GetProcAddress(::GetModuleHandleW(L"kernel32.dll"), "SetThreadDescription");
+	if (setThreadDescription != nullptr) {
+		HANDLE handle = ::OpenThread(THREAD_ALL_ACCESS, FALSE, threadID);
+		if (handle != nullptr) {
+			setThreadDescription(handle, (LPCWSTR)Utf8ToSystem(name).c_str());
+			::CloseHandle(handle);
+		}
+	}*/
+
+	typedef struct tagTHREADNAME_INFO
+	{
+		DWORD dwType;
+		LPCSTR szName;
+		DWORD dwThreadID;
+		DWORD dwFlags;
+	} THREADNAME_INFO;
+
+	THREADNAME_INFO info;
+	info.dwType = 0x1000;
+	info.szName = name.c_str();
+	info.dwThreadID = threadID;
+	info.dwFlags = 0;
+
+	__try
+	{
+		RaiseException(0x406D1388, 0, sizeof(info) / sizeof(DWORD), (ULONG_PTR*)&info);
+	}
+	__except(EXCEPTION_CONTINUE_EXECUTION)
+	{
+	}
+#endif
+#endif
 }
 
 bool ZThreadPthread::IsThreadRunning(Thread* th) const {
