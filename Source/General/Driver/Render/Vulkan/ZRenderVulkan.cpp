@@ -1,6 +1,8 @@
 #ifdef _MSC_VER
 #pragma warning(disable:4786)
 #endif
+#define VMA_IMPLEMENTATION
+#include "Core/vk_mem_alloc.h"
 
 #include "../../../Interface/Interfaces.h"
 #include "../../../Interface/IShader.h"
@@ -94,7 +96,13 @@ struct DrawSignatureItem {
 class DeviceImplVulkan final : public IRender::Device {
 public:
 	enum { MAX_DESCRIPTOR_COUNT = 1024 };
-	DeviceImplVulkan(IRender& r, VkAllocationCallbacks* alloc, VkPhysicalDevice phy, VkDevice dev, uint32_t family, VkQueue q) : render(r), allocator(alloc), physicalDevice(phy), device(dev), resolution(0, 0), queueFamily(family), queue(q), swapChain(VK_NULL_HANDLE), currentFrameIndex(0), currentSemaphoreIndex(0), surfaceFormat(VK_FORMAT_B8G8R8A8_UNORM), swapChainRebuild(false), swapChainRebuilding(false), repeatQueueStarvationCount(0), queueSummaryFlag(0) {
+	DeviceImplVulkan(IRender& r, VkAllocationCallbacks* alloc, VkPhysicalDevice phy, VkDevice dev, VkInstance instance, uint32_t family, VkQueue q) : render(r), allocator(alloc), physicalDevice(phy), device(dev), resolution(0, 0), queueFamily(family), queue(q), swapChain(VK_NULL_HANDLE), currentFrameIndex(0), currentSemaphoreIndex(0), surfaceFormat(VK_FORMAT_B8G8R8A8_UNORM), swapChainRebuild(false), swapChainRebuilding(false), repeatQueueStarvationCount(0), queueSummaryFlag(0) {
+		VmaAllocatorCreateInfo allocatorInfo = {};
+		allocatorInfo.physicalDevice = phy;
+		allocatorInfo.device = dev;
+		allocatorInfo.instance = instance;
+		vmaCreateAllocator(&allocatorInfo, &vmaAllocator);
+
 		for (size_t k = 0; k < sizeof(descriptorAllocators) / sizeof(descriptorAllocators[0]); k++) {
 			VkDescriptorPoolCreateInfo poolInfo = {};
 			poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -162,6 +170,7 @@ public:
 			vkDestroyDescriptorPool(device, descriptorAllocators[k], allocator);
 		}
 
+		vmaDestroyAllocator(vmaAllocator);
 		vkDestroyDevice(device, allocator);
 	}
 
@@ -268,6 +277,7 @@ public:
 	VkQueue queue;
 	Int2 resolution;
 	VkSwapchainKHR swapChain;
+	VmaAllocator vmaAllocator;
 
 	VkPhysicalDeviceMemoryProperties memoryProps;
 	VkDescriptorPool descriptorAllocators[VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT + 1];
@@ -348,11 +358,10 @@ public:
 		std::vector<Descriptor> deletedDescriptors;
 		std::vector<VkRenderPass> deletedRenderPasses;
 		std::vector<VkFramebuffer> deletedFramebuffers;
-		std::vector<VkBuffer> deletedBuffers;
+		std::vector<std::pair<VkBuffer, VmaAllocation>> deletedBuffers;
+		std::vector<std::pair<VkImage, VmaAllocation>> deletedImages;
 		std::vector<VkSampler> deletedSamplers;
 		std::vector<VkImageView> deletedImageViews;
-		std::vector<VkImage> deletedImages;
-		std::vector<VkDeviceMemory> deletedMemories;
 		std::vector<VkEvent> deletedEvents;
 	};
 
@@ -483,6 +492,7 @@ public:
 	void Deallocate(BufferNode& node) {
 		// free resources
 		VkDevice dev = device->device;
+		VmaAllocator vmaAllocator = device->vmaAllocator;
 		VkAllocationCallbacks* allocator = device->allocator;
 
 		for (VkPipelineLayout pipelineLayout : node.deletedPipelineLayouts) {
@@ -516,8 +526,12 @@ public:
 			vkDestroyFramebuffer(dev, framebuffer, allocator);
 		}
 
-		for (VkBuffer buffer : node.deletedBuffers) {
-			vkDestroyBuffer(dev, buffer, allocator);
+		for (auto buffer : node.deletedBuffers) {
+			vmaDestroyBuffer(vmaAllocator, buffer.first, buffer.second);
+		}
+
+		for (auto image : node.deletedImages) {
+			vmaDestroyImage(vmaAllocator, image.first, image.second);
 		}
 
 		for (VkSampler sampler : node.deletedSamplers) {
@@ -526,14 +540,6 @@ public:
 
 		for (VkImageView imageView : node.deletedImageViews) {
 			vkDestroyImageView(dev, imageView, allocator);
-		}
-
-		for (VkImage image : node.deletedImages) {
-			vkDestroyImage(dev, image, allocator);
-		}
-
-		for (VkDeviceMemory memory : node.deletedMemories) {
-			vkFreeMemory(dev, memory, allocator);
 		}
 
 		for (VkEvent event : node.deletedEvents) {
@@ -715,7 +721,7 @@ IRender::Device* ZRenderVulkan::CreateDevice(const String& description) {
 			VkBool32 res;
 			vkGetPhysicalDeviceSurfaceSupportKHR(device, family, (VkSurfaceKHR)surface, &res);
 
-			DeviceImplVulkan* impl = new DeviceImplVulkan(*this, allocator, device, logicDevice, family, queue);
+			DeviceImplVulkan* impl = new DeviceImplVulkan(*this, allocator, device, logicDevice, instance, family, queue);
 
 			int w, h;
 			glfwGetFramebufferSize(window, &w, &h);
@@ -1143,7 +1149,7 @@ template <>
 class ResourceImplVulkan<IRender::Resource::TextureDescription> final
 	: public ResourceBaseVulkanDesc<IRender::Resource::TextureDescription, IRender::Resource::RESOURCE_TEXTURE, ResourceImplVulkan<IRender::Resource::TextureDescription> > {
 public:
-	ResourceImplVulkan() : image(VK_NULL_HANDLE), imageView(VK_NULL_HANDLE), imageViewDepthAspect(VK_NULL_HANDLE), imageSampler(VK_NULL_HANDLE), memory(VK_NULL_HANDLE), dimension(0, 0, 0) {}
+	ResourceImplVulkan() : image(VK_NULL_HANDLE), imageView(VK_NULL_HANDLE), imageViewDepthAspect(VK_NULL_HANDLE), imageSampler(VK_NULL_HANDLE), vmaAllocation(VK_NULL_HANDLE), dimension(0, 0, 0) {}
 	~ResourceImplVulkan() {}
 
 	const void* GetHandle() const {
@@ -1167,12 +1173,10 @@ public:
 		}
 
 		if (image != VK_NULL_HANDLE) {
-			queue.currentCommandBuffer.deletedImages.emplace_back(image);
+			assert(vmaAllocation != VK_NULL_HANDLE);
+			queue.currentCommandBuffer.deletedImages.emplace_back(image, vmaAllocation);
 			image = VK_NULL_HANDLE;
-		}
-
-		if (memory != VK_NULL_HANDLE) {
-			queue.currentCommandBuffer.deletedMemories.emplace_back(memory);
+			vmaAllocation = VK_NULL_HANDLE;
 		}
 	}
 
@@ -1337,20 +1341,10 @@ public:
 			info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 			info.flags = desc.state.type == IRender::Resource::TextureDescription::TEXTURE_2D_CUBE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 
-			Verify("create image", vkCreateImage(device->device, &info, device->allocator, &image));
+			VmaAllocationCreateInfo vmaAllocInfo = {};
+			vmaAllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
 
-			VkMemoryRequirements req;
-			vkGetImageMemoryRequirements(device->device, image, &req);
-
-			VkMemoryAllocateInfo allocInfo;
-			allocInfo.pNext = nullptr;
-			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-			allocInfo.allocationSize = req.size;
-			allocInfo.memoryTypeIndex = device->GetMemoryType(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, req.memoryTypeBits);
-
-			// printf("Memory size: %x", req.size);
-			Verify("allocate texture memory", vkAllocateMemory(device->device, &allocInfo, device->allocator, &memory));
-			Verify("bind image", vkBindImageMemory(device->device, image, memory, 0));
+			Verify("create image", vmaCreateImage(device->vmaAllocator, &info, &vmaAllocInfo, &image, &vmaAllocation, nullptr));
 
 			VkImageViewCreateInfo viewInfo = {};
 			viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1374,36 +1368,23 @@ public:
 		if (!desc.data.Empty()) {
 			assert(!desc.state.attachment);
 			size_t size = desc.data.GetSize();
+			VmaAllocationCreateInfo vmaAllocInfo = {};
+			vmaAllocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+
 			VkBufferCreateInfo bufferInfo = {};
 			bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 			bufferInfo.size = size;
 			bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 			bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 			VkBuffer uploadBuffer;
-			Verify("create buffer", vkCreateBuffer(device->device, &bufferInfo, device->allocator, &uploadBuffer));
-
-			VkMemoryRequirements req;
-			vkGetBufferMemoryRequirements(device->device, uploadBuffer, &req);
-			assert(req.size >= size);
-			// assert(((size_t)description.data.GetData() & ~req.alignment) == 0);
-			VkMemoryAllocateInfo allocInfo = {};
-			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-			allocInfo.allocationSize = req.size;
-			allocInfo.memoryTypeIndex = device->GetMemoryType(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, req.memoryTypeBits);
-
-			VkDeviceMemory bufferMemory;
-			Verify("allocate memory", vkAllocateMemory(device->device, &allocInfo, device->allocator, &bufferMemory));
-			Verify("bind memory", vkBindBufferMemory(device->device, uploadBuffer, bufferMemory, 0));
+			VmaAllocation uploadBufferAllocation;
+			Verify("create buffer", vmaCreateBuffer(device->vmaAllocator, &bufferInfo, &vmaAllocInfo, &uploadBuffer, &uploadBufferAllocation, nullptr));
 
 			void* map = nullptr;
-			Verify("map memory", vkMapMemory(device->device, bufferMemory, 0, size, 0, &map));
+			Verify("map memory", vmaMapMemory(device->vmaAllocator, uploadBufferAllocation, &map));
 			memcpy(map, desc.data.GetData(), size);
-			VkMappedMemoryRange range = {};
-			range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-			range.memory = bufferMemory;
-			range.size = size;
-			Verify("flush memory", vkFlushMappedMemoryRanges(device->device, 1, &range));
-			vkUnmapMemory(device->device, bufferMemory);
+			vmaFlushAllocation(device->vmaAllocator, uploadBufferAllocation, 0, size);
+			vmaUnmapMemory(device->vmaAllocator, uploadBufferAllocation);
 
 			// Copy buffer to image
 			VkImageMemoryBarrier copyBarrier = {};
@@ -1474,8 +1455,7 @@ public:
 			vkCmdPipelineBarrier(queue.currentCommandBuffer.buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &useBarrier);
 			queue.currentCommandBuffer.commandCount++;
 
-			queue.currentCommandBuffer.deletedBuffers.emplace_back(uploadBuffer);
-			queue.currentCommandBuffer.deletedMemories.emplace_back(bufferMemory);
+			queue.currentCommandBuffer.deletedBuffers.emplace_back(uploadBuffer, uploadBufferAllocation);
 			desc.data.Clear();
 
 			// vkDestroyBuffer(device->device, uploadBuffer, device->allocator);
@@ -1487,7 +1467,7 @@ public:
 	VkImageView imageView;
 	VkImageView imageViewDepthAspect; // for shader read depth
 	VkSampler imageSampler;
-	VkDeviceMemory memory;
+	VmaAllocation vmaAllocation;
 	UShort3 dimension;
 };
 
@@ -1495,10 +1475,10 @@ template <>
 class ResourceImplVulkan<IRender::Resource::BufferDescription> final
 	: public ResourceBaseVulkanDesc<IRender::Resource::BufferDescription, IRender::Resource::RESOURCE_BUFFER, ResourceImplVulkan<IRender::Resource::BufferDescription> > {
 public:
-	ResourceImplVulkan() : buffer(VK_NULL_HANDLE), memory(VK_NULL_HANDLE), memorySize(0) {}
+	ResourceImplVulkan() : buffer(VK_NULL_HANDLE), vmaAllocation(VK_NULL_HANDLE), memorySize(0) {}
 	~ResourceImplVulkan() {
 		assert(buffer == VK_NULL_HANDLE);
-		assert(memory == VK_NULL_HANDLE);
+		assert(vmaAllocation == VK_NULL_HANDLE);
 	}
 
 	const void* GetHandle() const {
@@ -1507,13 +1487,10 @@ public:
 
 	void Clear(QueueImplVulkan& q) {
 		if (buffer != VK_NULL_HANDLE) {
-			q.currentCommandBuffer.deletedBuffers.emplace_back(buffer);
+			assert(vmaAllocation != VK_NULL_HANDLE);
+			q.currentCommandBuffer.deletedBuffers.emplace_back(buffer, vmaAllocation);
 			buffer = VK_NULL_HANDLE;
-		}
-
-		if (memory != VK_NULL_HANDLE) {
-			q.currentCommandBuffer.deletedMemories.emplace_back(memory);
-			memory = VK_NULL_HANDLE;
+			vmaAllocation = VK_NULL_HANDLE;
 		}
 	}
 
@@ -1556,17 +1533,10 @@ public:
 
 			createInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 			createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-			Verify("create buffer", vkCreateBuffer(device->device, &createInfo, device->allocator, &buffer));
-			
-			VkMemoryRequirements req;
-			vkGetBufferMemoryRequirements(device->device, buffer, &req);
-			VkMemoryAllocateInfo allocInfo = {};
-			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-			allocInfo.allocationSize = req.size;
-			allocInfo.memoryTypeIndex = device->GetMemoryType(desc.state.dynamic ? VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT : VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, req.memoryTypeBits);
 
-			Verify("allocate memory", vkAllocateMemory(device->device, &allocInfo, device->allocator, &memory));
-			Verify("bind memory", vkBindBufferMemory(device->device, buffer, memory, 0));
+			VmaAllocationCreateInfo vmaAllocInfo = {};
+			vmaAllocInfo.usage = desc.state.dynamic ? VMA_MEMORY_USAGE_CPU_TO_GPU : VMA_MEMORY_USAGE_AUTO;
+			Verify("create buffer", vmaCreateBuffer(device->vmaAllocator, &createInfo, &vmaAllocInfo, &buffer, &vmaAllocation, nullptr));
 		}
 
 		void* map = nullptr;
@@ -1579,33 +1549,19 @@ public:
 				bufferInfo.size = size;
 				bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 				bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+				VmaAllocationCreateInfo vmaAllocInfo = {};
+				vmaAllocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 				VkBuffer uploadBuffer;
-				Verify("create buffer", vkCreateBuffer(device->device, &bufferInfo, device->allocator, &uploadBuffer));
+				VmaAllocation uploadBufferAllocation;
+				Verify("create buffer", vmaCreateBuffer(device->vmaAllocator, &bufferInfo, &vmaAllocInfo, &uploadBuffer, &uploadBufferAllocation, nullptr));
 
-				VkMemoryRequirements req;
-				vkGetBufferMemoryRequirements(device->device, uploadBuffer, &req);
-				assert(req.size >= size);
-				// assert(((size_t)description.data.GetData() & ~req.alignment) == 0);
-				VkMemoryAllocateInfo allocInfo = {};
-				allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-				allocInfo.allocationSize = req.size;
-				allocInfo.memoryTypeIndex = device->GetMemoryType(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, req.memoryTypeBits);
-
-				VkDeviceMemory bufferMemory;
-				Verify("allocate memory", vkAllocateMemory(device->device, &allocInfo, device->allocator, &bufferMemory));
-				Verify("bind memory", vkBindBufferMemory(device->device, uploadBuffer, bufferMemory, 0));
-
-				if (!desc.data.Empty()) {
-					void* map = nullptr;
-					Verify("map memory", vkMapMemory(device->device, bufferMemory, 0, size, 0, &map));
-					memcpy(map, desc.data.GetData(), size);
-					VkMappedMemoryRange range = {};
-					range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-					range.memory = bufferMemory;
-					range.size = size;
-					Verify("flush memory", vkFlushMappedMemoryRanges(device->device, 1, &range));
-					vkUnmapMemory(device->device, bufferMemory);
-				}
+				assert(!desc.data.Empty());
+				void* map = nullptr;
+				Verify("map memory", vmaMapMemory(device->vmaAllocator, uploadBufferAllocation, &map));
+				memcpy(map, desc.data.GetData(), size);
+				vmaFlushAllocation(device->vmaAllocator, uploadBufferAllocation, 0, size);
+				vmaUnmapMemory(device->vmaAllocator, uploadBufferAllocation);
 
 				VkBufferMemoryBarrier copyBarrier = {};
 				copyBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -1639,17 +1595,12 @@ public:
 
 				vkCmdPipelineBarrier(queue.currentCommandBuffer.buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 1, &useBarrier, 0, nullptr);
 				queue.currentCommandBuffer.commandCount++;
-				queue.currentCommandBuffer.deletedBuffers.emplace_back(uploadBuffer);
-				queue.currentCommandBuffer.deletedMemories.emplace_back(bufferMemory);
+				queue.currentCommandBuffer.deletedBuffers.emplace_back(uploadBuffer, uploadBufferAllocation);
 			} else if (!desc.data.Empty()) {
-				Verify("map memory", vkMapMemory(device->device, memory, 0, size, 0, &map));
+				Verify("map memory", vmaMapMemory(device->vmaAllocator, vmaAllocation, &map));
 				memcpy(map, desc.data.GetData(), size);
-				VkMappedMemoryRange range = {};
-				range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-				range.memory = memory;
-				range.size = size;
-				Verify("flush memory", vkFlushMappedMemoryRanges(device->device, 1, &range));
-				vkUnmapMemory(device->device, memory);
+				vmaFlushAllocation(device->vmaAllocator, vmaAllocation, 0, size);
+				vmaUnmapMemory(device->vmaAllocator, vmaAllocation);
 			}
 
 			desc.data.Clear();
@@ -1657,7 +1608,7 @@ public:
 	}
 
 	VkBuffer buffer;
-	VkDeviceMemory memory;
+	VmaAllocation vmaAllocation;
 	size_t memorySize;
 };
 

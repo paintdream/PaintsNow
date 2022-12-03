@@ -503,8 +503,9 @@ void RenderResourceManager::TickDevice(IDevice& tickingDevice) {
 				do {
 					SharedLockGuardWriter guard(threadApi, mutex);
 					pendingCompletionResources.Push(TShared<ResourceBase>(nullptr));
-					render.FlushQueue(resourceQueue);
 				} while (false);
+				
+				render.FlushQueue(resourceQueue);
 
 				while (!pendingCompletionResources.Empty()) {
 					const TShared<ResourceBase>& resource = pendingCompletionResources.Top();
