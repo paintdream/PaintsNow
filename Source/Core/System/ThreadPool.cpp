@@ -99,7 +99,9 @@ IThread& ThreadPool::GetThreadApi() {
 }
 
 void ThreadPool::Signal() {
+	threadApi.DoLock(mutex);
 	threadApi.Signal(eventPump);
+	threadApi.UnLock(mutex);
 }
 
 void ThreadPool::Wait(uint32_t delay) {
@@ -203,9 +205,8 @@ bool ThreadPool::Dispatch(ITask* task, int priority) {
 		ITask* r = taskHead.load(std::memory_order_relaxed);
 		do {
 			task->next = r;
-		} while (!taskHead.compare_exchange_weak(r, task, std::memory_order_release, std::memory_order_relaxed));
+		} while (!taskHead.compare_exchange_weak(r, task, std::memory_order_acq_rel, std::memory_order_relaxed));
 
-		std::atomic_thread_fence(std::memory_order_acquire);
 		if (waitEventCounter > index + limit) {
 			Signal();
 		}
@@ -263,10 +264,10 @@ bool ThreadPool::Poll(uint32_t index) {
 
 								do {
 									q->next = r;
-								} while (!taskHead.compare_exchange_weak(r, q, std::memory_order_release, std::memory_order_relaxed));
+								} while (!taskHead.compare_exchange_weak(r, q, std::memory_order_relaxed, std::memory_order_relaxed));
 							} while (t != nullptr);
 
-							std::atomic_thread_fence(std::memory_order_acquire);
+							std::atomic_thread_fence(std::memory_order_acq_rel);
 
 							if (waitEventCounter > priority + limit) {
 								Signal();
