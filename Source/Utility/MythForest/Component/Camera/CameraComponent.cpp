@@ -488,7 +488,8 @@ void CameraComponent::UpdateTaskData(Engine& engine, Entity* entity) {
 
 	UpdateRootMatrices(*nextTaskData, localTransform);
 
-	nextTaskData->worldGlobalData.lastViewProjectionMatrix = prevTaskData->worldGlobalData.lastViewProjectionMatrix;
+	nextTaskData->worldGlobalData.lastViewMatrix = prevTaskData->worldGlobalData.viewMatrix;
+	nextTaskData->worldGlobalData.lastProjectionMatrix = prevTaskData->worldGlobalData.projectionMatrix;
 
 	UpdateCaptureData(captureData, localTransform);
 
@@ -685,7 +686,7 @@ void CameraComponent::OnTickCameraViewPort(Engine& engine, RenderPort& renderPor
 				portCameraView->inverseViewMatrix = worldGlobalData.inverseViewMatrix;
 				portCameraView->projectionMatrix = worldGlobalData.projectionMatrix * worldGlobalData.jitterMatrix;
 				portCameraView->inverseProjectionMatrix = Math::InversePerspective(portCameraView->projectionMatrix); // it's jittered
-				portCameraView->reprojectionMatrix = portCameraView->inverseProjectionMatrix * portCameraView->inverseViewMatrix * worldGlobalData.lastViewProjectionMatrix;
+				portCameraView->reprojectionMatrix = Math::InversePerspective(worldGlobalData.projectionMatrix)  * worldGlobalData.inverseViewMatrix * worldGlobalData.lastViewMatrix * worldGlobalData.lastProjectionMatrix;
 				portCameraView->projectionParams = Math::CompressPerspective(worldGlobalData.projectionMatrix);
 				portCameraView->inverseProjectionParams = Math::CompressInversePerspective(worldGlobalData.projectionMatrix);
 				portCameraView->jitterOffset = worldGlobalData.jitterOffset;
@@ -732,8 +733,6 @@ void CameraComponent::OnTickCameraViewPort(Engine& engine, RenderPort& renderPor
 
 			OPTICK_POP();
 		}
-
-		worldGlobalData.lastViewProjectionMatrix = worldGlobalData.viewMatrix * worldGlobalData.projectionMatrix;
 	}
 
 	renderPort.Flag().fetch_or(TINY_MODIFIED, std::memory_order_acq_rel);
@@ -1258,17 +1257,21 @@ TObject<IReflect>& CameraComponentConfig::WorldInstanceData::operator () (IRefle
 }
 
 CameraComponentConfig::WorldGlobalData::WorldGlobalData() :
-	viewProjectionMatrix(MatrixFloat4x4::Identity()), projectionMatrix(MatrixFloat4x4::Identity()), lastViewProjectionMatrix(MatrixFloat4x4::Identity()),
-	viewMatrix(MatrixFloat4x4::Identity()), inverseViewMatrix(MatrixFloat4x4::Identity()), jitterMatrix(MatrixFloat4x4::Identity()),
-	viewPosition(0, 0, 0), jitterOffset(0, 0) {}
+	viewProjectionMatrix(MatrixFloat4x4::Identity()), viewMatrix(MatrixFloat4x4::Identity()), projectionMatrix(MatrixFloat4x4::Identity()),
+	lastViewMatrix(MatrixFloat4x4::Identity()), lastProjectionMatrix(MatrixFloat4x4::Identity()), inverseViewMatrix(MatrixFloat4x4::Identity()),
+	jitterMatrix(MatrixFloat4x4::Identity()), viewPosition(0, 0, 0), jitterOffset(0, 0) {}
 
 TObject<IReflect>& CameraComponentConfig::WorldGlobalData::operator () (IReflect& reflect) {
 	BaseClass::operator () (reflect);
 
 	if (reflect.IsReflectProperty()) {
 		ReflectProperty(viewProjectionMatrix)[IShader::BindInput(IShader::BindInput::TRANSFORM_VIEWPROJECTION)];
-		ReflectProperty(lastViewProjectionMatrix)[IShader::BindInput(IShader::BindInput::TRANSFORM_LAST_VIEWPROJECTION)];
 		ReflectProperty(viewMatrix)[IShader::BindInput(IShader::BindInput::TRANSFORM_VIEW)];
+		ReflectProperty(projectionMatrix)[IShader::BindInput(IShader::BindInput::TRANSFORM_PROJECTION)];
+		ReflectProperty(lastViewMatrix);
+		ReflectProperty(lastProjectionMatrix);
+		ReflectProperty(inverseViewMatrix);
+		ReflectProperty(jitterMatrix);
 		ReflectProperty(viewPosition);
 		ReflectProperty(time);
 		ReflectProperty(tanHalfFov);

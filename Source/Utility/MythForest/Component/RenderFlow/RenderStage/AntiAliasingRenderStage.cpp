@@ -44,8 +44,7 @@ void AntiAliasingRenderStage::OnFrameUpdate(Engine& engine, IRender::Queue* queu
 	// assert(OutputColor.renderTargetTextureResource->GetTexture() != antiAliasing.lastInputTexture.resource);
 	antiAliasing.depthTexture.resource = Depth.textureResource->GetRenderResource();
 	antiAliasing.reprojectionMatrix = CameraView->reprojectionMatrix;
-	// antiAliasing.inverseProjectionParams = CameraView->inverseProjectionParams;
-	antiAliasing.unjitter = CameraView->jitterOffset * 0.5f;
+	antiAliasing.unjitter = CameraView->jitterOffset;
 	antiAliasing.lastRatio = CameraView->jitterHistoryRatio;
 
 	const UShort3& dim = InputColor.textureResource->description.dimension;

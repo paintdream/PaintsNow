@@ -40,9 +40,10 @@ namespace PaintsNow {
 
 			TObject<IReflect>& operator () (IReflect& reflect) override;
 			MatrixFloat4x4 viewProjectionMatrix;
-			MatrixFloat4x4 projectionMatrix;
-			MatrixFloat4x4 lastViewProjectionMatrix;
 			MatrixFloat4x4 viewMatrix;
+			MatrixFloat4x4 projectionMatrix;
+			MatrixFloat4x4 lastViewMatrix;
+			MatrixFloat4x4 lastProjectionMatrix;
 			MatrixFloat4x4 inverseViewMatrix; // inverse of viewMatrix
 			MatrixFloat4x4 jitterMatrix;
 

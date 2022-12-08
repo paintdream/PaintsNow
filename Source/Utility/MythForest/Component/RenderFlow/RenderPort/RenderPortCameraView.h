@@ -12,9 +12,9 @@ namespace PaintsNow {
 	public:
 		MatrixFloat4x4 projectionMatrix;
 		MatrixFloat4x4 inverseProjectionMatrix;
-		MatrixFloat4x4 reprojectionMatrix;
 		MatrixFloat4x4 viewMatrix;
 		MatrixFloat4x4 inverseViewMatrix;
+		MatrixFloat4x4 reprojectionMatrix;
 		Float4 projectionParams;
 		Float4 inverseProjectionParams;
 		Float2 jitterOffset;

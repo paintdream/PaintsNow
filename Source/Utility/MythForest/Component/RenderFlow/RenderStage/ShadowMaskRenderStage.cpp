@@ -83,7 +83,7 @@ void ShadowMaskRenderStage::OnFrameUpdate(Engine& engine, IRender::Queue* queue)
 			mask.reprojectionMatrix = inverseMatrix * shadow.shadowMatrix;
 			const UShort3& dim = InputDepth.textureResource->description.dimension;
 			mask.invScreenSize = Float2(1.0f / dim.x(), 1.0f / dim.y());
-			mask.unjitter = CameraView->jitterOffset * 0.5f;
+			mask.unjitter = CameraView->jitterOffset;
 			screenTransform.worldTransform = Math::QuickInverse(shadow.shadowMatrix) * CameraView->viewMatrix * CameraView->projectionMatrix;
 
 			if (shadow.shadowTexture) {

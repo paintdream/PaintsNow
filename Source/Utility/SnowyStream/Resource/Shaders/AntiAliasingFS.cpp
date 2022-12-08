@@ -17,11 +17,13 @@ String AntiAliasingFS::GetShaderText() {
 		float2 uv = rasterCoord.xy + unjitter;
 		outputColor = texture(inputTexture, uv);
 		if (depth > 0.0) {
-			float4 homoPos = float4(rasterCoord.x, rasterCoord.y, depth, 1) * float(2) - float4(1.0, 1.0, 1.0, 1.0);
+			float4 homoPos = float4(rasterCoord.x, rasterCoord.y, depth, 1.0) * float(2) - float4(1.0, 1.0, 1.0, 1.0);
 			homoPos = mult_vec(reprojectionMatrix, homoPos);
+			homoPos.xy = homoPos.xy / homoPos.w;
+
 			float2 test = step(abs(homoPos.xy), float2(1.0, 1.0));
 			if (test.x * test.y > 0.5) {
-				float4 lastColor = texture(lastInputTexture, homoPos.xy / homoPos.w * float(0.5) + float2(0.5, 0.5));
+				float4 lastColor = texture(lastInputTexture, homoPos.xy * float(0.5) + float2(0.5, 0.5));
 
 				float4 n1 = texture(inputTexture, uv + float2(invScreenSize.x, 0));
 				float4 n2 = texture(inputTexture, uv + float2(-invScreenSize.x, 0));
@@ -41,8 +43,8 @@ String AntiAliasingFS::GetShaderText() {
 				// float4 maxColor = max(max(max(n1, n2), max(n3, n4)), max(max(n5, n6), max(n7, n8)));
 				float4 minColor = min(min(n1, n2), min(n3, n4));
 				float4 maxColor = max(max(n1, n2), max(n3, n4));
-				minColor = max(min(outputColor, minColor), avg - sigma);
-				maxColor = min(max(outputColor, maxColor), avg + sigma);
+				minColor = max(min(outputColor, minColor), avg - sigma * 3);
+				maxColor = min(max(outputColor, maxColor), avg + sigma * 3);
 
 				outputColor = lerp(outputColor, clamp(lastColor, minColor, maxColor), lastRatio);
 			}
