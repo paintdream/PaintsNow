@@ -143,11 +143,11 @@ void ThreadPool::Uninitialize() {
 			if (count == 0)
 				break;
 
+			UnLock();
 			for (size_t i = 0; i < count; i++) {
 				Signal();
 			}
 
-			UnLock();
 			Wait(WAIT_DELAY);
 			DoLock();
 		}
@@ -159,11 +159,10 @@ void ThreadPool::Uninitialize() {
 
 			ITask* p = taskHead.exchange(nullptr, std::memory_order_acquire);
 			while (p != nullptr) {
-				p->Abort(nullptr);
 				ITask* q = p;
 				p = p->next;
 				q->next = nullptr;
-
+				q->Abort(nullptr);
 				taskTicket.fetch_sub(1, std::memory_order_release);
 			}
 

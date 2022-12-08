@@ -237,7 +237,7 @@ namespace PaintsNow {
 	class TWriteFence {
 	public:
 #if defined(_DEBUG) && defined(_MSC_VER) && _MSC_VER > 1200
-		TWriteFence(std::atomic<T>& var, uint32_t& id) noexcept : variable(var), threadId(id) {
+		TWriteFence(std::atomic<T>& var, uint32_t& id) : variable(var), threadId(id) {
 			Acquire(variable, threadId);
 		}
 
@@ -245,12 +245,12 @@ namespace PaintsNow {
 			Release(variable, threadId);
 		}
 
-		static void Acquire(std::atomic<T>& variable, uint32_t& threadId) noexcept {
+		static void Acquire(std::atomic<T>& variable, uint32_t& threadId) {
 			assert(variable.exchange(~(T)0, std::memory_order_acquire) == 0);
 			threadId = IThread::GetCurrentNativeThreadId();
 		}
 
-		static void Release(std::atomic<T>& variable, uint32_t& threadId) noexcept {
+		static void Release(std::atomic<T>& variable, uint32_t& threadId) {
 			threadId = 0;
 			assert(variable.exchange(0, std::memory_order_release) == ~(T)0);
 		}
@@ -265,7 +265,7 @@ namespace PaintsNow {
 	class TReadFence {
 	public:
 #if defined(_DEBUG) && defined(_MSC_VER) && _MSC_VER > 1200
-		TReadFence(std::atomic<T>& var, uint32_t& id) noexcept : variable(var), threadId(id) {
+		TReadFence(std::atomic<T>& var, uint32_t& id) : variable(var), threadId(id) {
 			Acquire(variable, threadId);
 		}
 
@@ -273,12 +273,12 @@ namespace PaintsNow {
 			Release(variable, threadId);
 		}
 
-		static void Acquire(std::atomic<T>& variable, uint32_t& threadId) noexcept {
+		static void Acquire(std::atomic<T>& variable, uint32_t& threadId) {
 			assert(variable.fetch_add(1, std::memory_order_acquire) != ~(T)0);
 			threadId = IThread::GetCurrentNativeThreadId();
 		}
 
-		static void Release(std::atomic<T>& variable, uint32_t& threadId) noexcept {
+		static void Release(std::atomic<T>& variable, uint32_t& threadId) {
 			threadId = 0;
 			assert(variable.fetch_sub(1, std::memory_order_release) != ~(T)0);
 		}
@@ -297,44 +297,44 @@ namespace PaintsNow {
 		mutable uint32_t threadId;
 
 	public:
-		TEnableReadWriteFence() noexcept { monitor.store(0, std::memory_order_relaxed); }
-		TReadFence<T> ReadFence() const noexcept {
+		TEnableReadWriteFence() { monitor.store(0, std::memory_order_relaxed); }
+		TReadFence<T> ReadFence() const {
 			return TReadFence<T>(monitor, threadId);
 		}
 
-		TWriteFence<T> WriteFence() const noexcept {
+		TWriteFence<T> WriteFence() const {
 			return TWriteFence<T>(monitor, threadId);
 		}
 
-		void AcquireRead() const noexcept {
+		void AcquireRead() const {
 			TReadFence<T>::Acquire(monitor, threadId);
 		}
 
-		void ReleaseRead() const noexcept {
+		void ReleaseRead() const {
 			TReadFence<T>::Release(monitor, threadId);
 		}
 
-		void AcquireWrite() const noexcept {
+		void AcquireWrite() const {
 			TWriteFence<T>::Acquire(monitor, threadId);
 		}
 
-		void ReleaseWrite() const noexcept {
+		void ReleaseWrite() const {
 			TWriteFence<T>::Release(monitor, threadId);
 		}
 #else
 	public:
-		TReadFence<T> ReadFence() const noexcept {
+		TReadFence<T> ReadFence() const {
 			return TReadFence<T>();
 		}
 
-		TWriteFence<T> WriteFence() const noexcept {
+		TWriteFence<T> WriteFence() const {
 			return TWriteFence<T>();
 		}
 
-		void AcquireRead() const noexcept {}
-		void ReleaseRead() const noexcept {}
-		void AcquireWrite() const noexcept {}
-		void ReleaseWrite() const noexcept {}
+		void AcquireRead() const {}
+		void ReleaseRead() const {}
+		void AcquireWrite() const {}
+		void ReleaseWrite() const {}
 #endif
 	};
 
@@ -348,50 +348,50 @@ namespace PaintsNow {
 		mutable uint32_t outThreadId;
 
 	public:
-		TEnableInOutFence() noexcept {
+		TEnableInOutFence() {
 			inMonitor.store(0, std::memory_order_relaxed);
 			outMonitor.store(0, std::memory_order_relaxed);
 			inThreadId = 0;
 			outThreadId = 0;
 		}
 
-		TWriteFence<T> InFence() const noexcept {
+		TWriteFence<T> InFence() const {
 			return TWriteFence<T>(inMonitor, inThreadId);
 		}
 
-		TWriteFence<T> OutFence() const noexcept {
+		TWriteFence<T> OutFence() const {
 			return TWriteFence<T>(outMonitor, outThreadId);
 		}
 
-		void AcquireIn() const noexcept {
+		void AcquireIn() const {
 			return TWriteFence<T>::Acquire(inMonitor, inThreadId);
 		}
 
-		void ReleaseIn() const noexcept {
+		void ReleaseIn() const {
 			return TWriteFence<T>::Release(inMonitor, inThreadId);
 		}
 
-		void AcquireOut() const noexcept {
+		void AcquireOut() const {
 			return TWriteFence<T>::Acquire(outMonitor, outThreadId);
 		}
 
-		void ReleaseOut() const noexcept {
+		void ReleaseOut() const {
 			return TWriteFence<T>::Release(outMonitor, outThreadId);
 		}
 #else
 	public:
-		TWriteFence<T> InFence() const noexcept {
+		TWriteFence<T> InFence() const {
 			return TWriteFence<T>();
 		}
 
-		TWriteFence<T> OutFence() const noexcept {
+		TWriteFence<T> OutFence() const {
 			return TWriteFence<T>();
 		}
 
-		void AcquireIn() const noexcept {}
-		void ReleaseIn() const noexcept {}
-		void AcquireOut() const noexcept {}
-		void ReleaseOut() const noexcept {}
+		void AcquireIn() const {}
+		void ReleaseIn() const {}
+		void AcquireOut() const {}
+		void ReleaseOut() const {}
 #endif
 
 	};
