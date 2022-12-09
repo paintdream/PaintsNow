@@ -49,6 +49,7 @@ LeavesFlute::LeavesFlute(bool ng, Interfaces& inters, const TWrapper<IArchive*, 
 	crossScriptModule(bridgeSunset.GetKernel().GetThreadPool(), inters.script) {
 #ifdef _WIN32
 	::SetConsoleOutputCP(65001); // UTF8
+	consoleThreadID = 0;
 
 #if defined(_MSC_VER) && _MSC_VER > 1200
 	CONSOLE_FONT_INFOEX cfi;
@@ -148,6 +149,10 @@ void LeavesFlute::EnterStdinLoop() {
 	}
 }
 
+#ifdef _WIN32
+static void CALLBACK Papcfunc(ULONG_PTR Parameter) {}
+#endif
+
 void LeavesFlute::EnterMainLoop() {
 	bridgeSunset.LogInfo().Printf("[LeavesFlute] Enter Standard Graphic Environment ...\n");
 
@@ -160,8 +165,17 @@ void LeavesFlute::EnterMainLoop() {
 	looping.store(0, std::memory_order_release);
 	bridgeSunset.LogInfo().Printf("[LeavesFlute] Exit Standard Graphic Environment ...\n");
 #ifdef _WIN32
-	::FreeConsole();
-	threadApi.Wait(consoleThread);
+	if (consoleThreadID != 0)
+	{
+		HANDLE handle = ::OpenThread(THREAD_ALL_ACCESS, FALSE, (DWORD)consoleThreadID);
+		if (handle != nullptr)
+		{
+			::QueueUserAPC(Papcfunc, handle, 0);
+			::CloseHandle(handle);
+			::FreeConsole();
+			threadApi.Wait(consoleThread);
+		}
+	}
 #endif
 	threadApi.DeleteThread(consoleThread);
 }
@@ -224,6 +238,7 @@ bool LeavesFlute::ConsoleProc(IThread::Thread* thread, size_t handle) {
 	cinfd[0].events = POLLIN;
 #else
 	HANDLE h = ::GetStdHandle(STD_INPUT_HANDLE);
+	consoleThreadID = ::GetCurrentThreadId();
 	
 	const size_t CMD_SIZE = 1024;
 	WCHAR buf[CMD_SIZE];
@@ -250,7 +265,7 @@ bool LeavesFlute::ConsoleProc(IThread::Thread* thread, size_t handle) {
 			break;
 		}
 #else
-		DWORD ret = ::WaitForSingleObject(h, INFINITE);
+		DWORD ret = ::WaitForSingleObjectEx(h, INFINITE, TRUE);
 
 		if (ret == WAIT_OBJECT_0) {
 			DWORD read;
@@ -276,7 +291,7 @@ bool LeavesFlute::ConsoleProc(IThread::Thread* thread, size_t handle) {
 			} else {
 				break;
 			}
-		} else if (ret == WAIT_OBJECT_0 + 1 || ret == WAIT_FAILED) {
+		} else if (ret == WAIT_OBJECT_0 + 1 || ret == WAIT_FAILED || ret == WAIT_IO_COMPLETION) {
 			break;
 		}
 #endif

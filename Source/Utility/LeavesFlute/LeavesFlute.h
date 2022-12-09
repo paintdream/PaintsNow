@@ -219,6 +219,9 @@ namespace PaintsNow {
 		IScript::Request::Ref listenConsole;
 		String newAppTitle;
 		String appTitle;
+#ifdef _WIN32
+		size_t consoleThreadID;
+#endif
 	};
 }
 
