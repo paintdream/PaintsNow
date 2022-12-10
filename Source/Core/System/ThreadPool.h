@@ -71,13 +71,8 @@ namespace PaintsNow {
 				return *reinterpret_cast<std::atomic<ITask*>*>(&taskHead);
 			}
 
-			std::atomic<size_t>& TaskTicket() {
-				return *reinterpret_cast<std::atomic<size_t>*>(&taskTicket);
-			}
-
 		private:
 			ITask* taskHead;
-			size_t taskTicket;
 
 		public:
 			void* context;
