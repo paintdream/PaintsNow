@@ -65,7 +65,10 @@ void ThreadPool::Initialize() {
 	for (size_t i = 0; i < threadInfos.size(); i++) {
 		ThreadInfo& info = threadInfos[i];
 		info.context = nullptr;
-		info.TaskHead().store(nullptr, std::memory_order_relaxed);
+
+		for (size_t n = 0; n < ThreadInfo::TASK_DUPLICATE_COUNT; n++) {
+			info.TaskHeads()[n].store(nullptr, std::memory_order_relaxed);
+		}
 	}
 
 	std::atomic_thread_fence(std::memory_order_release);
@@ -153,14 +156,17 @@ void ThreadPool::Uninitialize() {
 
 		for (size_t k = 0; k < threadCount; k++) {
 			ThreadInfo& info = threadInfos[k];
-			std::atomic<ITask*>& taskHead = info.TaskHead();
 
-			ITask* p = taskHead.exchange(nullptr, std::memory_order_acquire);
-			while (p != nullptr) {
-				ITask* q = p;
-				p = p->next;
-				q->next = nullptr;
-				q->Abort(nullptr);
+			for (size_t n = 0; n < ThreadInfo::TASK_DUPLICATE_COUNT; n++) {
+				std::atomic<ITask*>& taskHead = info.TaskHeads()[n];
+
+				ITask* p = taskHead.exchange(nullptr, std::memory_order_acquire);
+				while (p != nullptr) {
+					ITask* q = p;
+					p = p->next;
+					q->next = nullptr;
+					q->Abort(nullptr);
+				}
 			}
 
 			threadApi.DeleteThread(info.threadHandle);
@@ -191,9 +197,31 @@ bool ThreadPool::Dispatch(ITask* task, int priority) {
 		taskCount.fetch_add(1, std::memory_order_relaxed);
 		int offset = priority >= 0 ? priority : (int)GetThreadCount() + priority;
 		size_t index = offset < 0 ? 0u : Math::Min((uint32_t)offset, GetThreadCount() - 1);
-		std::atomic<ITask*>& taskHead = threadInfos[index].TaskHead();
+		assert(task->next == nullptr);
+
+		size_t best = 0;
+		ptrdiff_t maxDiff = 0;
+		for (size_t n = 0; n < ThreadInfo::TASK_DUPLICATE_COUNT; n++) {
+			std::atomic<ITask*>& taskHead = threadInfos[index].TaskHeads()[n];
+			ITask* expected = nullptr;
+
+			if (taskHead.compare_exchange_strong(expected, task, std::memory_order_release)) {
+				if (waitEventCounter > index + limit) {
+					Signal();
+				}
+
+				return true;
+			} else {
+				ptrdiff_t diff = task - expected;
+				if (diff >= maxDiff) {
+					maxDiff = diff;
+					best = n;
+				}
+			}
+		}
 
 		// Chain task
+		std::atomic<ITask*>& taskHead = threadInfos[index].TaskHeads()[best];
 		assert(task != taskHead.load(std::memory_order_acquire));
 		assert(task->next == nullptr);
 		ITask* r = taskHead.load(std::memory_order_relaxed);
@@ -212,14 +240,16 @@ bool ThreadPool::Dispatch(ITask* task, int priority) {
 	}
 }
 
-inline size_t ThreadPool::Fetch(size_t maxIndex) {
+inline std::pair<size_t, size_t> ThreadPool::Fetch(size_t maxIndex) {
 	for (size_t n = 0; n < maxIndex; n++) {
-		if (threadInfos[n].TaskHead().load(std::memory_order_acquire) != nullptr) {
-			return n;
+		for (size_t k = 0; k < ThreadInfo::TASK_DUPLICATE_COUNT; k++) {
+			if (threadInfos[n].TaskHeads()[k].load(std::memory_order_acquire) != nullptr) {
+				return std::make_pair(n, k);
+			}
 		}
 	}
 
-	return ~(size_t)0;
+	return std::make_pair(~(size_t)0, ~(size_t)0);
 }
 
 bool ThreadPool::Poll(uint32_t index) {
@@ -228,13 +258,15 @@ bool ThreadPool::Poll(uint32_t index) {
 
 	// Wait for a moment
 	size_t maxIndex = threadCount - Math::Min(priorityIndex, threadCount);
-	size_t priority = Fetch(maxIndex);
+	std::pair<size_t, size_t> fetched = Fetch(maxIndex);
+	size_t priority = fetched.first;
 	bool ret;
 
 	if (priority != ~(size_t)0) {
+		size_t offset = fetched.second;
 		size_t k = runningCount.fetch_add(1, std::memory_order_relaxed);
 		if (priority + k < threadCount) {
-			std::atomic<ITask*>& taskHead = threadInfos[priority].TaskHead();
+			std::atomic<ITask*>& taskHead = threadInfos[priority].TaskHeads()[offset];
 
 			// Has task?
 			if (taskHead.load(std::memory_order_acquire) != nullptr) {

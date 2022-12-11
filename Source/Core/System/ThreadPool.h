@@ -49,7 +49,7 @@ namespace PaintsNow {
 
 	protected:
 		bool Run(IThread::Thread* thread, size_t threadID);
-		size_t Fetch(size_t index);
+		std::pair<size_t, size_t> Fetch(size_t index);
 		virtual void Signal();
 		virtual void Wait(uint32_t delay);
 
@@ -67,12 +67,13 @@ namespace PaintsNow {
 		IThread::Event* eventPump;
 
 		struct_aligned(CPU_CACHELINE_SIZE) ThreadInfo {
-			std::atomic<ITask*>& TaskHead() {
-				return *reinterpret_cast<std::atomic<ITask*>*>(&taskHead);
+			enum { TASK_DUPLICATE_COUNT = 4 };
+			std::atomic<ITask*>* TaskHeads() {
+				return reinterpret_cast<std::atomic<ITask*>*>(&taskHead);
 			}
 
 		private:
-			ITask* taskHead;
+			ITask* taskHead[TASK_DUPLICATE_COUNT];
 
 		public:
 			void* context;

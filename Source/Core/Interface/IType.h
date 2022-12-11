@@ -30,6 +30,7 @@ typedef char int8_t;
 typedef short int16_t;
 typedef int int32_t;
 typedef __int64 int64_t;
+typedef int ptrdiff_t;
 
 #include "../Backport/VC98STRING.h"
 #else
