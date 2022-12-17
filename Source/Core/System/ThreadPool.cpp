@@ -173,7 +173,6 @@ void ThreadPool::Uninitialize() {
 		}
 
 		threadInfos.clear();
-		std::atomic_thread_fence(std::memory_order_release);
 	}
 
 	UnLock();

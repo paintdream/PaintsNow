@@ -81,6 +81,23 @@ namespace PaintsNow {
 			SubTaskQueue& operator = (const SubTaskQueue& rhs);
 			~SubTaskQueue() override;
 
+			struct PreemptGuard {
+				PreemptGuard(SubTaskQueue& q, uint32_t i);
+				~PreemptGuard();
+
+				operator bool() const {
+					return state;
+				}
+
+			protected:
+				SubTaskQueue& queue;
+				uint32_t index;
+				bool state;
+				bool already;
+			};
+
+			friend struct PreemptGuard;
+
 			// Take execution atomically, returns true on success
 			bool PreemptExecution();
 			// Yield execution
