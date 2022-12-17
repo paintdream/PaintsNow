@@ -14,7 +14,7 @@ AntiAliasingFS::AntiAliasingFS() : lastRatio(0.9f) {
 String AntiAliasingFS::GetShaderText() {
 	return UnifyShaderCode(
 		float depth = texture(depthTexture, rasterCoord.xy).x;
-		float2 uv = rasterCoord.xy + unjitter;
+		float2 uv = rasterCoord.xy;
 		outputColor = texture(inputTexture, uv);
 		if (depth > 0.0) {
 			float4 homoPos = float4(rasterCoord.x, rasterCoord.y, depth, 1.0) * float(2) - float4(1.0, 1.0, 1.0, 1.0);
@@ -43,8 +43,8 @@ String AntiAliasingFS::GetShaderText() {
 				// float4 maxColor = max(max(max(n1, n2), max(n3, n4)), max(max(n5, n6), max(n7, n8)));
 				float4 minColor = min(min(n1, n2), min(n3, n4));
 				float4 maxColor = max(max(n1, n2), max(n3, n4));
-				minColor = max(min(outputColor, minColor), avg - sigma * 3);
-				maxColor = min(max(outputColor, maxColor), avg + sigma * 3);
+				minColor = max(min(outputColor, minColor), avg - sigma * float(3));
+				maxColor = min(max(outputColor, maxColor), avg + sigma * float(3));
 
 				outputColor = lerp(outputColor, clamp(lastColor, minColor, maxColor), lastRatio);
 			}
