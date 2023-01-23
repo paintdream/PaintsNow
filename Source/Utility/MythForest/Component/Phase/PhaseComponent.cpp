@@ -424,7 +424,7 @@ void PhaseComponent::TickRender(Engine& engine) {
 				for (size_t k = 0; k < task.textures.size(); k++) {
 					IRender::Resource::TextureDescription& target = task.textures[k]->description;
 					assert(!target.data.Empty()); // must success
-					engine.GetKernel().QueueRoutine(this, CreateTaskContextFree(Wrap(this, &PhaseComponent::CoTaskWriteDebugTexture), std::ref(engine), (uint32_t)verify_cast<uint32_t>(frameIndex * tasks.size() + i), std::move(task.textures[k]->description.data), task.textures[k]));
+					engine.GetKernel().QueueRoutine(this, CreateTaskContextFree(Wrap(this, &PhaseComponent::RoutineWriteDebugTexture), std::ref(engine), (uint32_t)verify_cast<uint32_t>(frameIndex * tasks.size() + i), std::move(task.textures[k]->description.data), task.textures[k]));
 				}
 			}
 
@@ -447,7 +447,7 @@ static String ParseStageFromTexturePath(const String& path) {
 	return String(path.c_str() + 17, p);
 }
 
-void PhaseComponent::CoTaskWriteDebugTexture(Engine& engine, uint32_t index, Bytes& data, const TShared<TextureResource>& texture) {
+void PhaseComponent::RoutineWriteDebugTexture(Engine& engine, uint32_t index, Bytes& data, const TShared<TextureResource>& texture) {
 	OPTICK_EVENT();
 	if (!debugPath.empty()) {
 		std::stringstream ss;

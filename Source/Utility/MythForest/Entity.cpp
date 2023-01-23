@@ -53,6 +53,7 @@ void Entity::Destroy() {
 			if (kernel.GetCurrentWarpIndex() == GetWarpIndex()) {
 				ClearComponents(engine);
 			} else {
+				ReferenceObject();
 				kernel.QueueRoutine(this, CreateTask(Wrap(InvokeClearComponentsAndRelease), std::ref(engine), this));
 				return;
 			}

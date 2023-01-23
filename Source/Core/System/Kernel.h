@@ -52,19 +52,20 @@ namespace PaintsNow {
 
 		// Current-Warp corelated functions, will be effected by current warp state
 		void QueueRoutine(WarpTiny* warpTiny, ITask* task);
+		void QueueRoutineExternal(WarpTiny* warpTiny, ITask* task);
 		void QueueRoutinePost(WarpTiny* warpTiny, ITask* task);
 		uint32_t GetCurrentWarpIndex() const;
 		uint32_t YieldCurrentWarp();
 		void SetWarpPriority(uint32_t warp, int priority);
 
 		// Operates on other warp
-		void SuspendWarp(uint32_t warp);
+		bool SuspendWarp(uint32_t warp);
 		bool ResumeWarp(uint32_t warp);
 		bool WaitWarp(uint32_t warp, uint32_t delay = 5);
 		bool Wait(std::atomic<uint32_t>& variable, uint32_t mask = ~(uint32_t)0, uint32_t flag = 0, uint32_t delay = 5);
-		bool PushWarp(uint32_t warp);
-		uint32_t PushIdleWarp();
-		void PopWarp();
+#ifdef _DEBUG
+		void CheckSelfPolling(uint32_t warp);
+#endif
 
 	protected:
 		bool WaitWarpInternal(uint32_t warp, uint32_t delay);
@@ -81,9 +82,44 @@ namespace PaintsNow {
 			SubTaskQueue& operator = (const SubTaskQueue& rhs);
 			~SubTaskQueue() override;
 
+			template <bool AllowSuspended>
 			struct PreemptGuard {
-				PreemptGuard(SubTaskQueue& q, uint32_t i);
-				~PreemptGuard();
+				PreemptGuard(SubTaskQueue& q, uint32_t i) : queue(q), index(i) {
+#ifdef _DEBUG
+					current = queue.kernel->GetCurrentWarpIndex();
+#endif
+					state = AllowSuspended ? true : q.suspendCount.load(std::memory_order_relaxed) == 0;
+					if (state) {
+						if (queue.kernel->GetCurrentWarpIndex() == index) {
+							preempted = false;
+						} else {
+							preempted = q.PreemptExecution();
+							state = preempted && (AllowSuspended || q.suspendCount.load(std::memory_order_acquire) == 0);
+						}
+					} else {
+						preempted = false;
+					}
+				}
+
+				void Cleanup() {
+					state = preempted = false;
+				}
+
+				~PreemptGuard() {
+#ifdef _DEBUG
+					uint32_t w = queue.kernel->GetCurrentWarpIndex();
+					if (state) {
+						assert(w == index);
+					}
+#endif
+					if (preempted) {
+						queue.YieldExecution();
+					}
+#ifdef _DEBUG
+					uint32_t t = queue.kernel->GetCurrentWarpIndex();
+					assert(t == current);
+#endif
+				}
 
 				operator bool() const {
 					return state;
@@ -92,11 +128,15 @@ namespace PaintsNow {
 			protected:
 				SubTaskQueue& queue;
 				uint32_t index;
+#ifdef _DEBUG
+				uint32_t current;
+#endif
+				bool preempted;
 				bool state;
-				bool already;
 			};
 
-			friend struct PreemptGuard;
+			friend struct PreemptGuard<true>;
+			friend struct PreemptGuard<false>;
 
 			// Take execution atomically, returns true on success
 			bool PreemptExecution();
@@ -104,7 +144,7 @@ namespace PaintsNow {
 			bool YieldExecution();
 
 			// Block/Allow all tasks preemptions, stacked with internally counting.
-			void Suspend();
+			bool Suspend();
 			bool Resume();
 
 			// Commit Execute request to specified thread pool.
@@ -127,6 +167,9 @@ namespace PaintsNow {
 			std::atomic<uint32_t*> threadWarp;
 			std::atomic<int32_t> suspendCount;
 			std::atomic<int32_t> queueing;
+#ifdef _DEBUG
+			std::atomic<uint32_t> selfPolling;
+#endif
 			int priority;
 			uint32_t stackQueue;
 		};
@@ -176,6 +219,9 @@ namespace PaintsNow {
 		CoTaskTemplate(Kernel& k, T ref) : kernel(k), callback(ref) {
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 		void Execute(void* request) override {
@@ -210,6 +256,9 @@ namespace PaintsNow {
 
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 
@@ -243,6 +292,9 @@ namespace PaintsNow {
 
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 		void Execute(void* request) override {
@@ -275,6 +327,9 @@ namespace PaintsNow {
 			pa = a; pb = b; pc = c;
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 		void Execute(void* request) override {
@@ -308,6 +363,9 @@ namespace PaintsNow {
 			pa = a; pb = b; pc = c; pd = d;
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 		void Execute(void* request) override {
@@ -342,6 +400,9 @@ namespace PaintsNow {
 			pa = a; pb = b; pc = c; pd = d; pe = e;
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 		void Execute(void* request) override {
@@ -377,6 +438,9 @@ namespace PaintsNow {
 			pa = a; pb = b; pc = c; pd = d; pe = e; pf = f;
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 		void Execute(void* request) override {
@@ -413,6 +477,9 @@ namespace PaintsNow {
 			pa = a; pb = b; pc = c; pd = d; pe = e; pf = f; pg = g;
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 		void Execute(void* request) override {
@@ -451,6 +518,9 @@ namespace PaintsNow {
 		ContextFreeCoTaskTemplate(Kernel& k, T ref) : kernel(k), callback(ref) {
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 		void Execute(void* request) override {
@@ -481,6 +551,9 @@ namespace PaintsNow {
 			pa = a;
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 		void Execute(void* request) override {
@@ -511,6 +584,9 @@ namespace PaintsNow {
 			pa = a; pb = b;
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 		void Execute(void* request) override {
@@ -574,6 +650,9 @@ namespace PaintsNow {
 			pa = a; pb = b; pc = c; pd = d;
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 		void Execute(void* request) override {
@@ -608,6 +687,9 @@ namespace PaintsNow {
 			pa = a; pb = b; pc = c; pd = d; pe = e;
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 		void Execute(void* request) override {
@@ -643,6 +725,9 @@ namespace PaintsNow {
 			pa = a; pb = b; pc = c; pd = d; pe = e; pf = f;
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 		void Execute(void* request) override {
@@ -679,6 +764,9 @@ namespace PaintsNow {
 			pa = a; pb = b; pc = c; pd = d; pe = e; pf = f; pg = g;
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 		void Execute(void* request) override {
@@ -716,6 +804,9 @@ namespace PaintsNow {
 		CoTaskTemplate(Kernel& k, T c, Params&&... params) : kernel(k), callback(c), arguments(std::forward<Params>(params)...) {
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 
@@ -754,6 +845,9 @@ namespace PaintsNow {
 		ContextFreeCoTaskTemplate(Kernel& k, T t, Params&&... params) : kernel(k), callback(t), arguments(std::forward<Params>(params)...) {
 			warp = kernel.GetCurrentWarpIndex();
 			assert(warp != ~(uint32_t)0);
+#ifdef _DEBUG
+			kernel.CheckSelfPolling(warp);
+#endif
 			kernel.SuspendWarp(warp);
 		}
 

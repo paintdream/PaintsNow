@@ -171,8 +171,6 @@ namespace PaintsNow {
 		unsigned int YieldCurrentWarp() override;
 		void SuspendWarp(unsigned int warp) override;
 		void ResumeWarp(unsigned int warp) override;
-		bool PushWarp(unsigned int warp) override;
-		void PopWarp() override;
 		unsigned int AllocateWarpIndex() override;
 		void FreeWarpIndex(unsigned int warp) override;
 		void RegisterEngineCallback(EngineCallback* frameCallback) override;

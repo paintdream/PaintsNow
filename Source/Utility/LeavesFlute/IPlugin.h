@@ -34,8 +34,6 @@ namespace PaintsNow {
 		virtual unsigned int YieldCurrentWarp() = 0;
 		virtual void SuspendWarp(unsigned int warp) = 0;
 		virtual void ResumeWarp(unsigned int warp) = 0;
-		virtual bool PushWarp(unsigned int warp) = 0;
-		virtual void PopWarp() = 0;
 		virtual unsigned int AllocateWarpIndex() = 0;
 		virtual void FreeWarpIndex(unsigned int warp) = 0;
 

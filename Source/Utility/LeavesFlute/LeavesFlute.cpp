@@ -837,14 +837,6 @@ void LeavesFlute::ResumeWarp(unsigned int warp) {
 	bridgeSunset.GetKernel().ResumeWarp(warp);
 }
 
-bool LeavesFlute::PushWarp(unsigned int warp) {
-	return bridgeSunset.GetKernel().PushWarp(warp);
-}
-
-void LeavesFlute::PopWarp() {
-	bridgeSunset.GetKernel().PopWarp();
-}
-
 unsigned int LeavesFlute::AllocateWarpIndex() {
 	return bridgeSunset.AllocateWarpIndex();
 }

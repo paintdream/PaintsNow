@@ -146,6 +146,14 @@ void Kernel::AcquireFlushOnWait() {
 	}
 }
 
+#ifdef _DEBUG
+void Kernel::CheckSelfPolling(uint32_t warpIndex) {
+	assert(warpIndex < taskQueueGrid.size());
+	uint32_t current = WarpIndex;
+	assert(taskQueueGrid[warpIndex].selfPolling.load(std::memory_order_acquire) == 0);
+}
+#endif
+
 bool Kernel::Wait(std::atomic<uint32_t>& variable, uint32_t mask, uint32_t flag, uint32_t delay) {
 	if ((variable.load(std::memory_order_acquire) & mask) == flag) {
 		return true;
@@ -203,39 +211,6 @@ bool Kernel::WaitWarp(uint32_t warpIndex, uint32_t delay) {
 	}
 }
 
-bool Kernel::PushWarp(uint32_t warp) {
-	assert(warp < taskQueueGrid.size());
-	SubTaskQueue& q = taskQueueGrid[warp];
-	return q.PreemptExecution();
-}
-
-uint32_t Kernel::PushIdleWarp() {
-	// scan idle warp
-	std::atomic_thread_fence(std::memory_order_acquire);
-
-	for (size_t i = 0; i < sizeof(idleMask) / sizeof(idleMask[0]); i++) {
-		size_t mask = idleMask[i];
-		while (mask != 0) {
-			size_t bit = Math::Alignment(mask);
-			if (mask & bit) {
-				uint32_t k = verify_cast<uint32_t>(Math::Log2x(bit) + i * sizeof(size_t) * 8);
-				if (PushWarp(k)) {
-					return k;
-				}
-			}
-		}
-	}
-
-	return ~(uint32_t)0;
-}
-
-void Kernel::PopWarp() {
-	uint32_t current = WarpIndex;
-	assert(current != ~(uint32_t)0);
-	SubTaskQueue& q = taskQueueGrid[current];
-	q.YieldExecution();
-}
-
 void Kernel::Reset() {
 	OPTICK_EVENT();
 	assert(GetCurrentWarpIndex() == ~(uint32_t)0);
@@ -259,7 +234,7 @@ void Kernel::Reset() {
 				for (uint32_t j = 0; j < GetWarpCount(); j++) {
 					if (visited[j] == 0) {
 						SubTaskQueue& q = taskQueueGrid[j];
-						SubTaskQueue::PreemptGuard guard(q, j);
+						SubTaskQueue::PreemptGuard<true> guard(q, j);
 						if (guard) {
 							q.AbortImpl(nullptr);
 							visited[j] = 1;
@@ -279,7 +254,7 @@ void Kernel::Reset() {
 		} else {
 			for (uint32_t j = 0; j < warpCount; j++) {
 				SubTaskQueue& q = taskQueueGrid[j];
-				SubTaskQueue::PreemptGuard guard(q, j);
+				SubTaskQueue::PreemptGuard<true> guard(q, j);
 				assert(guard);
 				q.AbortImpl(nullptr);
 			}
@@ -313,7 +288,7 @@ void Kernel::ForwardRoutine::Execute(void* context) {
 	assert(next == nullptr);
 	assert(queued == 0);
 	// requeue it
-	kernel.QueueRoutine(tiny, task);
+	kernel.QueueRoutinePost(tiny, task);
 	tiny->ReleaseObject();
 
 	ITask::Delete(this);
@@ -345,49 +320,36 @@ void Kernel::QueueRoutine(WarpTiny* warpTiny, ITask* task) {
 	uint32_t toWarpIndex = warpTiny->GetWarpIndex();
 	assert(toWarpIndex < taskQueueGrid.size());
 	SubTaskQueue& q = taskQueueGrid[toWarpIndex];
-
 	if (fromThreadIndex == ~(uint32_t)0) {
-		// external thread?
-		// forward to threadPool directly
-		warpTiny->ReferenceObject();
-		threadPool.Dispatch(new (ITask::Allocate(sizeof(ForwardRoutine))) ForwardRoutine(*this, warpTiny, task));
+		QueueRoutineExternal(warpTiny, task);
 	} else {
-		bool suspended = q.suspendCount.load(std::memory_order_acquire) == 0;
-		if (!suspended) {
-			uint32_t* warp = (uint32_t*)(size_t)q.threadWarp.load(std::memory_order_acquire);
-			uint32_t currentWrapIndex = WarpIndex;
-			if (currentWrapIndex == toWarpIndex && warp == &WarpIndex) {
-				// Just the same warp? Execute at once.
-				task->Execute(threadPool.GetThreadContext(fromThreadIndex));
-				return;
-			} else if (currentWrapIndex == ~(uint32_t)0 && warp == nullptr) {
-				// try to preempt first
-				SubTaskQueue::PreemptGuard guard(q, toWarpIndex);
-				if (guard) {
-					// recheck suspended
-					if (q.suspendCount.load(std::memory_order_acquire) == 0) {
-						q.queueing.store(STATE_FLUSHING, std::memory_order_release);
-
-						task->Execute(threadPool.GetThreadContext(fromThreadIndex));
-						if (!q.YieldExecution()) {
-							q.Flush(threadPool);
-						}
-
-						return;
-					} else {
-						q.queueing.store(STATE_QUEUEING, std::memory_order_relaxed);
-					}
-				}
-			}
-		}
-
-		// Must be asynchronized
+		SubTaskQueue::PreemptGuard<false> guard(q, toWarpIndex);
+		if (guard) {
+			// Just the same warp? Execute at once.
 #ifdef _DEBUG
-		activeTaskCount.fetch_add(1, std::memory_order_relaxed);
+			q.selfPolling.fetch_add(1, std::memory_order_acquire);
 #endif
-		warpTiny->ReferenceObject(); // hold reference in case of invalid memory access.
-		QueueRoutineInternal(toWarpIndex, fromThreadIndex, warpTiny, task);
+			task->Execute(threadPool.GetThreadContext(fromThreadIndex));
+#ifdef _DEBUG
+			q.selfPolling.fetch_sub(1, std::memory_order_release);
+#endif
+		} else {
+			QueueRoutinePost(warpTiny, task);
+		}
 	}
+}
+
+void Kernel::QueueRoutineExternal(WarpTiny* warpTiny, ITask* task) {
+	assert(warpTiny != nullptr);
+	uint32_t fromThreadIndex = threadPool.GetCurrentThreadIndex();
+	uint32_t toWarpIndex = warpTiny->GetWarpIndex();
+	assert(toWarpIndex < taskQueueGrid.size());
+	SubTaskQueue& q = taskQueueGrid[toWarpIndex];
+	assert(fromThreadIndex == ~(uint32_t)0);
+	// external thread?
+	// forward to threadPool directly
+	warpTiny->ReferenceObject();
+	threadPool.Dispatch(new (ITask::Allocate(sizeof(ForwardRoutine))) ForwardRoutine(*this, warpTiny, task));
 }
 
 void Kernel::QueueRoutinePost(WarpTiny* warpTiny, ITask* task) {
@@ -411,10 +373,10 @@ uint32_t Kernel::YieldCurrentWarp() {
 	return warpIndex;
 }
 
-void Kernel::SuspendWarp(uint32_t warpIndex) {
+bool Kernel::SuspendWarp(uint32_t warpIndex) {
 	assert(warpIndex < taskQueueGrid.size());
 	SubTaskQueue& taskQueue = taskQueueGrid[warpIndex];
-	taskQueue.Suspend();
+	return taskQueue.Suspend();
 }
 
 bool Kernel::ResumeWarp(uint32_t warpIndex) {
@@ -427,6 +389,9 @@ bool Kernel::ResumeWarp(uint32_t warpIndex) {
 Kernel::SubTaskQueue::SubTaskQueue(Kernel* e, uint32_t idCount) : kernel(e), TaskQueue(idCount), priority(0), stackQueue(~(uint32_t)0) {
 	threadWarp.store(nullptr, std::memory_order_relaxed);
 	suspendCount.store(0, std::memory_order_relaxed);
+#ifdef _DEBUG
+	selfPolling.store(0, std::memory_order_relaxed);
+#endif
 	queueing.store(0, std::memory_order_release);
 
 	YieldExecution();
@@ -442,13 +407,16 @@ Kernel::SubTaskQueue::SubTaskQueue(const SubTaskQueue& rhs) : TaskQueue(verify_c
 	stackQueue = rhs.stackQueue;
 	threadWarp.store(nullptr, std::memory_order_relaxed);
 	suspendCount.store(0, std::memory_order_relaxed);
+#ifdef _DEBUG
+	selfPolling.store(0, std::memory_order_relaxed);
+#endif
 	queueing.store(0, std::memory_order_release);
 
 	YieldExecution();
 }
 
-inline void Kernel::SubTaskQueue::Suspend() {
-	suspendCount.fetch_add(1, std::memory_order_acquire);
+inline bool Kernel::SubTaskQueue::Suspend() {
+	return suspendCount.fetch_add(1, std::memory_order_acquire) == 0;
 }
 
 inline bool Kernel::SubTaskQueue::Resume() {
@@ -510,17 +478,6 @@ static const char* warpStrings[] = {
 };
 #endif
 
-Kernel::SubTaskQueue::PreemptGuard::PreemptGuard(SubTaskQueue& q, uint32_t i) : queue(q), index(i) {
-	if (WarpIndex == index) {
-		state = already = true;
-	} else {
-		state = q.PreemptExecution();
-		already = false;
-	}
-}
-
-Kernel::SubTaskQueue::PreemptGuard::~PreemptGuard() { if (state && !already) queue.YieldExecution(); }
-
 bool Kernel::SubTaskQueue::PreemptExecution() {
 	uint32_t* expected = nullptr;
 	uint32_t thisWarpIndex = verify_cast<uint32_t>(this - &kernel->taskQueueGrid[0]);
@@ -547,11 +504,12 @@ bool Kernel::SubTaskQueue::PreemptExecution() {
 
 bool Kernel::SubTaskQueue::YieldExecution() {
 	uint32_t* exp = &WarpIndex;
-	if (threadWarp.compare_exchange_strong(exp, (uint32_t*)nullptr, std::memory_order_relaxed)) {
+	if (threadWarp.compare_exchange_strong(exp, reinterpret_cast<uint32_t*>(~(size_t)0), std::memory_order_relaxed)) {
 		OPTICK_POP();
 
 		WarpIndex = stackQueue;
 		stackQueue = ~(uint32_t)0;
+		threadWarp.store(static_cast<uint32_t*>(nullptr), std::memory_order_release);
 
 		size_t warp = this - &kernel->taskQueueGrid[0];
 		std::atomic<size_t>& s = *reinterpret_cast<std::atomic<size_t>*>(&kernel->idleMask[warp / (sizeof(size_t) * 8)]);
@@ -569,11 +527,13 @@ bool Kernel::SubTaskQueue::YieldExecution() {
 
 void Kernel::SubTaskQueue::ExecuteImpl(void* context) {
 	if (suspendCount.load(std::memory_order_acquire) == 0) {
-		PreemptGuard guard(*this, verify_cast<uint32_t>(this - &kernel->taskQueueGrid[0]));
+		PreemptGuard<false> guard(*this, verify_cast<uint32_t>(this - &kernel->taskQueueGrid[0]));
 		if (guard) {
 			if (suspendCount.load(std::memory_order_acquire) == 0) {
 				queueing.store(STATE_FLUSHING, std::memory_order_release);
 				TaskQueue::Execute(context);
+				guard.Cleanup();
+
 				if (!YieldExecution()) {
 					Flush(kernel->threadPool);
 				}
@@ -628,7 +588,7 @@ bool Kernel::SubTaskQueue::InvokeOperation(std::pair<ITask*, void*>& task, void 
 	}
 
 	// recheck suspend and yield status
-	return operation == &ITask::Abort || (suspendCount.load(std::memory_order_acquire) == 0 && (uint32_t*)threadWarp.load(std::memory_order_relaxed) == &WarpIndex && WarpIndex == thisWarpIndex);
+	return operation == &ITask::Abort || (suspendCount.load(std::memory_order_acquire) == 0 && WarpIndex == thisWarpIndex);
 }
 
 void Kernel::SubTaskQueue::Push(uint32_t fromThreadIndex, ITask* task, WarpTiny* warpTiny) {

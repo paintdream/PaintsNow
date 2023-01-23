@@ -30,6 +30,7 @@
 # include <vector>
 # include <map>
 # include <cmath>
+# include <limits>
 
 
 //------------------------------------------------------------------------------

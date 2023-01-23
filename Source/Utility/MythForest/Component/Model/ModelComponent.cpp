@@ -85,7 +85,7 @@ void ModelComponent::GenerateDrawCall(ModelComponent::OutputRenderDataEx& render
 			bufferRange.buffer = meshBuffers[k];
 			bufferRange.offset = offsets[k].first;
 			bufferRange.length = 0;
-			bufferRange.component = offsets[k].second;
+			bufferRange.component = verify_cast<uint16_t>(offsets[k].second);
 			bufferRange.type = 0;
 		}
 	}

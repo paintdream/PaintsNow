@@ -62,6 +62,7 @@ namespace PaintsNow {
 
 		forceinline void ReleaseObject() {
 			// every external references released?
+			assert(referCount.load(std::memory_order_acquire) > 0);
 			if (referCount.fetch_sub(1, std::memory_order_relaxed) == 1) {
 				Destroy();
 			}
