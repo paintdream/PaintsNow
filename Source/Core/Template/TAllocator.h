@@ -37,7 +37,7 @@ namespace PaintsNow {
 							size_t index = Math::Log2x(bit) + k * sizeof(size_t) * 8;
 							if (index < K) {
 								bitmap |= bit;
-								return block.address + (k * sizeof(size_t) * 8 + index) * N;
+								return block.address + index * N;
 							}
 						}
 					}
