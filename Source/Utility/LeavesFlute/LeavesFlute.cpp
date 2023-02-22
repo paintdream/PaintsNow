@@ -142,11 +142,15 @@ void LeavesFlute::Setup() {
 void LeavesFlute::EnterStdinLoop() {
 	bridgeSunset.LogInfo().Printf("[LeavesFlute] Enter Standard Console Environment ...\n");
 
+	looping.store(1, std::memory_order_release);
+
 	if (consoleHandler) {
 		consoleHandler(*this);
 	} else {
 		ConsoleProc(nullptr, 0);
 	}
+
+	looping.store(0, std::memory_order_release);
 }
 
 #ifdef _WIN32
