@@ -15,6 +15,7 @@
 #endif
 #include "../../Utility/LeavesFlute/Loader.h"
 #include <ctime>
+#include <signal.h>
 
 #include "Helpers/ImGui/LeavesImGui.h"
 
@@ -31,6 +32,13 @@ using namespace PaintsNow;
 static bool DumpHandler() {
 	// always write minidump file
 	return true;
+}
+
+static Loader* mainLoader = nullptr;
+static void SignalHandler(int i) {
+	assert(mainLoader != nullptr);
+	mainLoader->GetLeavesFluteReference()->Exit();
+	::signal(i, SIG_IGN);
 }
 
 int main(int argc, char* argv[]) {
@@ -106,6 +114,9 @@ int main(int argc, char* argv[]) {
 	printf("LeavesWing %s\nPaintDream (paintdream@paintdream.com) (C) 2014-2022\nBased on PaintsNow [https://github.com/paintdream/paintsnow]\n", PAINTSNOW_VERSION_MINOR);
 
 	Loader loader;
+	mainLoader = &loader;
+	::signal(SIGINT, SignalHandler);
+
 #if USE_LEAVES_IMGUI
 	std::map<String, CmdLine::Option>::const_iterator it = cmdLine.GetFactoryMap().find("IFrame");
 	if (it != cmdLine.GetFactoryMap().end() && it->second.name == "ZFrameGLFWImGui") {

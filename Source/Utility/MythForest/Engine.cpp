@@ -81,7 +81,7 @@ void Engine::InstallModule(Module* module) {
 	assert(moduleMap.find(name) == moduleMap.end());
 	moduleMap[name] = module;
 	moduleList.push_back(module);
-	bridgeSunset.LogInfo().Printf("[MythForest::Engine] Initialize Module: %s\n", name.c_str());
+	// bridgeSunset.LogInfo().Printf("[MythForest::Engine] Initialize Module: %s\n", name.c_str());
 
 	module->Initialize();
 }

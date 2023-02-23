@@ -28,6 +28,7 @@ namespace PaintsNow {
 		TObject<IReflect>& operator () (IReflect& reflect) override;
 		Interfaces& GetInterfaces() const;
 		Kernel& GetKernel();
+		void Exit();
 
 		// Script interfaces
 		void ScriptRequire(IScript::Request& request) override;

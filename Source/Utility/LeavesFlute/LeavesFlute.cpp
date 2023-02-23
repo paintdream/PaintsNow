@@ -397,9 +397,13 @@ void LeavesFlute::ScriptRequire(IScript::Request& request) {
 	request << endtable;
 }
 
+void LeavesFlute::Exit() {
+	interfaces.frame.ExitMainLoop();
+}
+
 void LeavesFlute::RequestExit(IScript::Request& request) {
 	bridgeSunset.LogInfo().Printf("[Script] Exit requested.\n");
-	interfaces.frame.ExitMainLoop();
+	Exit();
 }
 
 void LeavesFlute::RequestListenConsole(IScript::Request& request, IScript::Request::Ref ref) {

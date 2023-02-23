@@ -271,7 +271,7 @@ namespace PaintsNow {
 		template <class T, class M>
 		void RegisterReflectedSerializer(UniqueType<T> type, typename T::DriverType& device, void* context, UniqueType<M> managerType) {
 			String extension = GetReflectedExtension(type.Get());
-			bridgeSunset.LogInfo().Printf("[SnowyStream] Register resource type <%s> with extension <%s>\n", type.Get()->GetBriefName().c_str(), extension.c_str());
+			// bridgeSunset.LogInfo().Printf("[SnowyStream] Register resource type <%s> with extension <%s>\n", type.Get()->GetBriefName().c_str(), extension.c_str());
 			ResourceCreator* serializer = new ResourceReflectedCreator<T>(extension);
 			RegisterResourceSerializer(extension, device, serializer, context, managerType);
 			serializer->ReleaseObject();

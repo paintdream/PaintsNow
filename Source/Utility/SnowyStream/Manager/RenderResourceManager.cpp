@@ -114,7 +114,7 @@ IRender::Queue* RenderResourceManager::GetWarpResourceQueue() {
 }
 
 void RenderResourceManager::CreateBuiltinSolidTexture(const String& path, const UChar4& color) {
-	LogInfo().Printf("[SnowyStream::RenderResourceManager] Create builtin texture: %s\n", path.c_str());
+	// LogInfo().Printf("[SnowyStream::RenderResourceManager] Create builtin texture: %s\n", path.c_str());
 
 	IRender& render = device;
 	// Error Texture for missing textures ...
@@ -142,7 +142,7 @@ void RenderResourceManager::CreateBuiltinSolidTexture(const String& path, const 
 }
 
 void RenderResourceManager::CreateBuiltinMesh(const String& path, const Float3* vertices, size_t vertexCount, const UInt3* indices, size_t indexCount) {
-	LogInfo().Printf("[SnowyStream::RenderResourceManager] Create builtin mesh: %s\n", path.c_str());
+	// LogInfo().Printf("[SnowyStream::RenderResourceManager] Create builtin mesh: %s\n", path.c_str());
 
 	TShared<MeshResource> meshResource = TShared<MeshResource>::From(new MeshResource(*this, path));
 	meshResource->Flag().fetch_or(ResourceBase::RESOURCE_ETERNAL | ResourceBase::RESOURCE_VIRTUAL);
@@ -315,7 +315,7 @@ void RegisterPass(ResourceManager& resourceManager, UniqueType<T> type, const St
 	}
 
 	String fullName = ShaderResource::GetShaderPathPrefix() + name;
-	resourceManager.LogInfo().Printf("[SnowyStream::RenderResourceManager] Create builtin pass: %s\n", fullName.c_str());
+	// resourceManager.LogInfo().Printf("[SnowyStream::RenderResourceManager] Create builtin pass: %s\n", fullName.c_str());
 
 	shaderResource->SetLocation(fullName);
 
