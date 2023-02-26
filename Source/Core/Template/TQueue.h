@@ -534,12 +534,7 @@ namespace PaintsNow {
 			while (true) {
 				It next = popHead->Pop(from, to);
 				if (from == next) {
-					if (popHead->Empty() && popHead != pushHead) {
-						Node* p = popHead;
-						popHead = popHead->next;
-
-						delete p;
-					}
+					CleanupEmpty();
 
 					if (next == to)
 						return next;
@@ -550,10 +545,12 @@ namespace PaintsNow {
 		}
 
 		inline T& Top() {
+			CleanupEmpty();
 			return popHead->Top();
 		}
 
 		inline const T& Top() const {
+			const_cast<TQueueList*>(this)->CleanupEmpty();
 			return popHead->Top();
 		}
 
@@ -561,16 +558,23 @@ namespace PaintsNow {
 			return popHead->Predict();
 		}
 
-		inline void Pop() {
-			OUT_FENCE_GUARD();
-			popHead->Pop();
-
+		inline bool CleanupEmpty() {
 			if (popHead->Empty() && popHead != pushHead) {
 				Node* p = popHead;
 				popHead = popHead->next;
 
 				delete p;
+				return true;
+			} else {
+				return false;
 			}
+		}
+
+		inline void Pop() {
+			OUT_FENCE_GUARD();
+			popHead->Pop();
+
+			CleanupEmpty();
 		}
 
 		inline uint32_t Pop(uint32_t n) {
@@ -579,15 +583,10 @@ namespace PaintsNow {
 			while (n != 0) {
 				uint32_t m = Math::Min(n, popHead->Count());
 				popHead->Pop(m);
+				n -= m;
 
 				// current queue is empty, remove it from list.
-				if (popHead->Empty() && popHead != pushHead) {
-					Node* p = popHead;
-					popHead = popHead->next;
-					delete p;
-
-					n -= m;
-				} else {
+				if (!CleanupEmpty()) {
 					break;
 				}
 			}
@@ -626,16 +625,8 @@ namespace PaintsNow {
 		inline void Deallocate(uint32_t size, uint32_t alignment) {
 			OUT_FENCE_GUARD();
 
-			while (!popHead->Deallocate(size, alignment)) {
-				if (popHead != pushHead) {
-					Node* p = popHead;
-					popHead = popHead->next;
-					delete p;
-				} else {
-					assert(false);
-					break;
-				}
-			}
+			popHead->Deallocate(size, alignment);
+			CleanupEmpty();
 		}
 
 		inline void Reset(uint32_t reserved) {
@@ -665,7 +656,7 @@ namespace PaintsNow {
 		}
 
 		inline bool Empty() const {
-			return popHead->Empty();
+			return pushHead->Empty();
 		}
 
 		class Iterator {
@@ -764,6 +755,7 @@ namespace PaintsNow {
 		typedef Iterator iterator;
 
 		inline Iterator Begin() {
+			CleanupEmpty();
 			return Iterator(popHead, popHead->Begin());
 		}
 
@@ -875,6 +867,7 @@ namespace PaintsNow {
 		typedef ConstIterator const_iterator;
 
 		inline ConstIterator Begin() const {
+			const_cast<TQueueList*>(this)->CleanupEmpty();
 			return ConstIterator(popHead, popHead->Begin());
 		}
 
