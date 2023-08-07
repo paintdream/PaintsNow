@@ -208,6 +208,7 @@ void VisibilityComponent::SetupIdentities(Engine& engine, Entity* entity) {
 					SetupIdentities(engine, static_cast<SpaceComponent*>(component)->GetRootEntity());
 				} else {
 					pendingSetupCount.fetch_add(1, std::memory_order_relaxed);
+					// engine.GetKernel().QueueBarrier(GetWarpIndex());
 					engine.GetKernel().QueueRoutine(component, CreateTaskContextFree(Wrap(this, &VisibilityComponent::RoutineSetupIdentities), std::ref(engine), static_cast<SpaceComponent*>(component)->GetRootEntity()));
 				}
 			}

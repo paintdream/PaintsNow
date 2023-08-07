@@ -57,6 +57,7 @@ namespace PaintsNow {
 		uint32_t GetCurrentWarpIndex() const;
 		uint32_t YieldCurrentWarp();
 		void SetWarpPriority(uint32_t warp, int priority);
+		void QueueBarrier(uint32_t warp);
 
 		// Operates on other warp
 		bool SuspendWarp(uint32_t warp);

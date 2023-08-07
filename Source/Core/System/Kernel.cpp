@@ -364,6 +364,14 @@ void Kernel::QueueRoutinePost(WarpTiny* warpTiny, ITask* task) {
 	QueueRoutineInternal(toWarpIndex, fromThreadIndex, warpTiny, task);
 }
 
+void Kernel::QueueBarrier(uint32_t warpIndex) {
+	assert(warpIndex < taskQueueGrid.size());
+	SubTaskQueue& taskQueue = taskQueueGrid[warpIndex];
+	uint32_t fromThreadIndex = threadPool.GetCurrentThreadIndex();
+	assert(fromThreadIndex != ~(uint32_t)0);
+	taskQueue.Barrier(fromThreadIndex);
+}
+
 uint32_t Kernel::YieldCurrentWarp() {
 	uint32_t warpIndex = WarpIndex;
 	if (warpIndex != ~(uint32_t)0) {

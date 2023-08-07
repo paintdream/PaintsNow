@@ -20,6 +20,7 @@ namespace PaintsNow {
 		TaskQueue(uint32_t idCount);
 		~TaskQueue() override;
 		void Push(uint32_t id, ITask* task, void* tag);
+		void Barrier(uint32_t id);
 		bool Flush(ThreadPool& threadPool, int priority);
 		typedef TQueueList<std::pair<ITask*, void*> > RingBuffer;
 		const std::vector<RingBuffer>& GetRingBuffers() const;
@@ -38,6 +39,9 @@ namespace PaintsNow {
 
 		// Wait-free Ring Buffer
 		std::vector<RingBuffer> ringBuffers;
+		std::vector<size_t> ringVersions;
+		size_t barrierVersion;
+		size_t currentVersion;
 		size_t threadIndex;
 	};
 }
