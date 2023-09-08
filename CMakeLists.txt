@@ -4,12 +4,12 @@ OPTION (STATIC_VC_RUNTIME "Use static VC runtime" ON)
 
 IF (NOT WIN32)
   	find_program(CLANG-TIDY-EXE "/usr/bin/clang-tidy")
-ENDIF ()
+ENDIF (NOT WIN32)
 
 IF (EXISTS "${CLANG-TIDY-EXE}")
 	# MESSAGE(STATUS "use clang-tidy to check")	
   	# SET (CMAKE_CXX_CLANG_TIDY "${CLANG-TIDY-EXE};--header-filter=.*;-checks=-*,modernize-use-override;modernize-pass-by-value;-p=${CMAKE_BUILD_DIR};-fix;-fix-errors")
-ENDIF ()
+ENDIF (EXISTS "${CLANG-TIDY-EXE}")
 
 # ================================================================ #
 PROJECT (PaintsNow)
@@ -25,16 +25,16 @@ DEFINE_PROPERTY(
     FULL_DOCS  "Use to organize targets in an IDE."
 )
 
-FUNCTION(ADD_SUBDIRECTORY_WITH_FOLDER _folder_name _folder)
+FUNCTION (ADD_SUBDIRECTORY_WITH_FOLDER _folder_name _folder)
     ADD_SUBDIRECTORY(${_folder} ${ARGN})
     SET_PROPERTY(DIRECTORY "${_folder}" PROPERTY FOLDER "${_folder_name}")
-ENDFUNCTION()
+ENDFUNCTION ()
 
 IF (CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
     SET (IS_X86_64 1)
-ELSE ()
+ELSE (CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
     SET (IS_X86_64 0)
-ENDIF ()
+ENDIF (CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
 
 MESSAGE (STATUS "IS x86/amd64: ${IS_X86_64} (${CMAKE_SYSTEM_PROCESSOR})" )
 
@@ -42,9 +42,9 @@ IF (MSVC)
 	# Default to statically-linked runtime.
 	IF (STATIC_VC_RUNTIME)
 		SET (MSVC_RUNTIME "static")
-	ELSE()
+	ELSE (STATIC_VC_RUNTIME)
 		SET (MSVC_RUNTIME "dynamic")
-	ENDIF ()
+	ENDIF (STATIC_VC_RUNTIME)
 	# SET compiler options.
 	SET (variables
 		CMAKE_C_FLAGS_DEBUG
@@ -69,7 +69,7 @@ IF (MSVC)
 				string(REGEX REPLACE "/MD" "/MT" ${variable} "${${variable}}")
 			ENDIF ()
 		ENDFOREACH ()
-	ELSE()
+	ELSE ()
 		MESSAGE(STATUS
 			"MSVC -> forcing use of dynamically-linked runtime."
 		)
@@ -114,9 +114,9 @@ ENDIF (USE_OPTICK)
 
 IF (MSVC)
 	# ADD_COMPILE_OPTIONS ("/doc")
-	STRING(REGEX REPLACE "/EH[a-z]+" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	STRING (REGEX REPLACE "/EH[a-z]+" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs-c-")
-	STRING(REGEX REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	STRING (REGEX REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR-")
 
 	# SET (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /fsanitize=address")
@@ -227,7 +227,7 @@ ENDIF (ADD_RANDOM_LIBNOISE_BUILTIN)
 OPTION (ADD_AUDIO_LAME "Add LAME Decoder Audio Driver" ON)
 IF (ADD_AUDIO_LAME)
 	SET (FLAG_ADD_AUDIO_LAME 1)
-	ADD_SUBDIRECTORY_WITH_FOLDER("Library" Source/General/Driver/Filter/LAME/Core)
+	ADD_SUBDIRECTORY_WITH_FOLDER ("Library" Source/General/Driver/Filter/LAME/Core)
 
 	FILE (GLOB_RECURSE LAME_SRC
 		"${PROJECT_SOURCE_DIR}/Source/General/Driver/Filter/LAME/*.h"
@@ -242,7 +242,7 @@ ENDIF (ADD_AUDIO_LAME)
 OPTION (ADD_AUDIO_OPENAL "Add OpenAL Audio Driver" ON)
 IF (ADD_AUDIO_OPENAL)
 	SET (FLAG_ADD_AUDIO_OPENAL 1)
-	ADD_SUBDIRECTORY_WITH_FOLDER("Library" Source/General/Driver/Audio/OpenAL/Core)
+	ADD_SUBDIRECTORY_WITH_FOLDER ("Library" Source/General/Driver/Audio/OpenAL/Core)
 
 	FILE (GLOB OPENAL_SRC
 		"${PROJECT_SOURCE_DIR}/Source/General/Driver/Audio/OpenAL/*.h"
@@ -419,7 +419,7 @@ ENDIF (ADD_FILTER_LZMA_BUILTIN)
 OPTION (ADD_FONT_FREETYPE "Add Freetype Font Driver" ON)
 IF (ADD_FONT_FREETYPE)
 	SET (FLAG_ADD_FONT_FREETYPE 1)
-	ADD_SUBDIRECTORY_WITH_FOLDER("Library" Source/General/Driver/Font/Freetype/Core)
+	ADD_SUBDIRECTORY_WITH_FOLDER ("Library" Source/General/Driver/Font/Freetype/Core)
 
 	FILE (GLOB FREETYPE_SRC
 		"${PROJECT_SOURCE_DIR}/Source/General/Driver/Font/Freetype/*.h"
@@ -434,7 +434,7 @@ ENDIF (ADD_FONT_FREETYPE)
 OPTION (ADD_FRAME_GLFW "Add GLFW Frame/Timer Driver" ON)
 IF (ADD_FRAME_GLFW)
 	SET (FLAG_ADD_FRAME_GLFW 1)
-	ADD_SUBDIRECTORY_WITH_FOLDER("Library" Source/General/Driver/Frame/GLFW/Core)
+	ADD_SUBDIRECTORY_WITH_FOLDER ("Library" Source/General/Driver/Frame/GLFW/Core)
 
 	FILE (GLOB GLFW_SRC
 		"${PROJECT_SOURCE_DIR}/Source/General/Driver/Frame/GLFW/*.h"
@@ -452,7 +452,7 @@ ENDIF (ADD_FRAME_GLFW)
 OPTION (ADD_IMAGE_FREEIMAGE "Add Freeimage Image Driver" ON)
 IF (ADD_IMAGE_FREEIMAGE)
 	SET (FLAG_ADD_IMAGE_FREEIMAGE 1)
-	ADD_SUBDIRECTORY_WITH_FOLDER("Library" Source/General/Driver/Image/FreeImage/Core)
+	ADD_SUBDIRECTORY_WITH_FOLDER ("Library" Source/General/Driver/Image/FreeImage/Core)
 
 	FILE (GLOB FREEIMAGE_SRC
 		"${PROJECT_SOURCE_DIR}/Source/General/Driver/Image/FreeImage/*.h"
@@ -467,7 +467,7 @@ ENDIF (ADD_IMAGE_FREEIMAGE)
 OPTION (ADD_NETWORK_LIBEVENT "Add Libevent Network Driver" ON)
 IF (ADD_NETWORK_LIBEVENT)
 	SET (FLAG_ADD_NETWORK_LIBEVENT 1)
-	ADD_SUBDIRECTORY_WITH_FOLDER("Library" Source/General/Driver/Network/LibEvent/Core)
+	ADD_SUBDIRECTORY_WITH_FOLDER ("Library" Source/General/Driver/Network/LibEvent/Core)
 	FILE (GLOB LIBEVENT_SRC
 		"${PROJECT_SOURCE_DIR}/Source/General/Driver/Network/LibEvent/*.h"
 		"${PROJECT_SOURCE_DIR}/Source/General/Driver/Network/LibEvent/*.cpp"
@@ -513,11 +513,14 @@ ENDIF (ADD_RENDER_OPENGL)
 
 OPTION (ADD_RENDER_VULKAN "Add Vulkan Render Driver" OFF)
 IF (ADD_RENDER_VULKAN)
+	FIND_PACKAGE (Vulkan)
+
 	SET (FLAG_ADD_RENDER_VULKAN 1)
-	CHECK_INCLUDE_FILES(vulkan/vulkan.h HAVE_VULKAN_H)
-	IF (NOT HAVE_VULKAN_H)
-		MESSAGE (FATAL_ERROR "Could not find vulkan/vulkan.h FOR Vulkan Render Driver")
-	ENDIF (NOT HAVE_VULKAN_H)
+	INCLUDE_DIRECTORIES ("${Vulkan_INCLUDE_DIRS}")
+	SET (HAVE_VULKAN_H Vulkan_FOUND)
+	IF (NOT Vulkan_FOUND)
+		MESSAGE (FATAL_ERROR "Could not find Vulkan Render Driver")
+	ENDIF (NOT Vulkan_FOUND)
 
 	FILE (GLOB_RECURSE VULKAN_SRC
 		"${PROJECT_SOURCE_DIR}/Source/General/Driver/Render/Vulkan/*.h"
@@ -601,9 +604,9 @@ FOREACH (FILE ${PAINTSNOW_SRC})
 	GET_FILENAME_COMPONENT(PARENT_DIR "${FILE}" PATH)
 
 	# skip src or include and changes /'s to \\'s
-	STRING(REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
-	STRING(REPLACE "/" "\\" GROUP "${GROUP}")
-	STRING(REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
+	STRING (REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
+	STRING (REPLACE "/" "\\" GROUP "${GROUP}")
+	STRING (REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
 	SOURCE_GROUP("${GROUP}" FILES "${FILE}")
 ENDFOREACH (FILE ${PAINTSNOW_SRC})
 
@@ -623,14 +626,14 @@ FOREACH (FILE ${PURPLETRAIL_SRC})
 	GET_FILENAME_COMPONENT(PARENT_DIR "${FILE}" PATH)
 
 	# skip src or include and changes /'s to \\'s
-	STRING(REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
-	STRING(REPLACE "/" "\\" GROUP "${GROUP}")
-	STRING(REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
+	STRING (REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
+	STRING (REPLACE "/" "\\" GROUP "${GROUP}")
+	STRING (REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
 	SOURCE_GROUP("${GROUP}" FILES "${FILE}")
 ENDFOREACH (FILE ${PURPLETRAIL_SRC})
 
 ADD_LIBRARY (PurpleTrail ${PURPLETRAIL_SRC})
-SET_TARGET_PROPERTIES(PurpleTrail PROPERTIES FOLDER Utility)
+SET_TARGET_PROPERTIES (PurpleTrail PROPERTIES FOLDER Utility)
 
 # ---------------------------------------------------------------- #
 
@@ -643,14 +646,14 @@ FOREACH (FILE ${ICEFLOW_SRC})
 	GET_FILENAME_COMPONENT(PARENT_DIR "${FILE}" PATH)
 
 	# skip src or include and changes /'s to \\'s
-	STRING(REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
-	STRING(REPLACE "/" "\\" GROUP "${GROUP}")
-	STRING(REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
+	STRING (REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
+	STRING (REPLACE "/" "\\" GROUP "${GROUP}")
+	STRING (REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
 	SOURCE_GROUP("${GROUP}" FILES "${FILE}")
 ENDFOREACH (FILE ${ICEFLOW_SRC})
 
 ADD_LIBRARY (IceFlow ${ICEFLOW_SRC})
-SET_TARGET_PROPERTIES(IceFlow PROPERTIES FOLDER Utility)
+SET_TARGET_PROPERTIES (IceFlow PROPERTIES FOLDER Utility)
 
 # ---------------------------------------------------------------- #
 
@@ -663,14 +666,14 @@ FOREACH (FILE ${BRIDGESUNSET_SRC})
 	GET_FILENAME_COMPONENT(PARENT_DIR "${FILE}" PATH)
 
 	# skip src or include and changes /'s to \\'s
-	STRING(REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
-	STRING(REPLACE "/" "\\" GROUP "${GROUP}")
-	STRING(REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
+	STRING (REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
+	STRING (REPLACE "/" "\\" GROUP "${GROUP}")
+	STRING (REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
 	SOURCE_GROUP("${GROUP}" FILES "${FILE}")
 ENDFOREACH (FILE ${BRIDGESUNSET_SRC})
 
 ADD_LIBRARY (BridgeSunset ${BRIDGESUNSET_SRC})
-SET_TARGET_PROPERTIES(BridgeSunset PROPERTIES FOLDER Utility)
+SET_TARGET_PROPERTIES (BridgeSunset PROPERTIES FOLDER Utility)
 
 # ---------------------------------------------------------------- #
 
@@ -683,14 +686,14 @@ FOREACH (FILE ${ECHOLEGEND_SRC})
 	GET_FILENAME_COMPONENT(PARENT_DIR "${FILE}" PATH)
 
 	# skip src or include and changes /'s to \\'s
-	STRING(REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
-	STRING(REPLACE "/" "\\" GROUP "${GROUP}")
-	STRING(REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
+	STRING (REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
+	STRING (REPLACE "/" "\\" GROUP "${GROUP}")
+	STRING (REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
 	SOURCE_GROUP("${GROUP}" FILES "${FILE}")
 ENDFOREACH (FILE ${ECHOLEGEND_SRC})
 
 ADD_LIBRARY (EchoLegend ${ECHOLEGEND_SRC})
-SET_TARGET_PROPERTIES(EchoLegend PROPERTIES FOLDER Utility)
+SET_TARGET_PROPERTIES (EchoLegend PROPERTIES FOLDER Utility)
 
 # ---------------------------------------------------------------- #
 
@@ -703,14 +706,14 @@ FOREACH (FILE ${GALAXYWEAVER_SRC})
 	GET_FILENAME_COMPONENT(PARENT_DIR "${FILE}" PATH)
 
 	# skip src or include and changes /'s to \\'s
-	STRING(REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
-	STRING(REPLACE "/" "\\" GROUP "${GROUP}")
-	STRING(REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
+	STRING (REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
+	STRING (REPLACE "/" "\\" GROUP "${GROUP}")
+	STRING (REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
 	SOURCE_GROUP("${GROUP}" FILES "${FILE}")
 ENDFOREACH (FILE ${GALAXYWEAVER_SRC})
 
 ADD_LIBRARY (GalaxyWeaver ${GALAXYWEAVER_SRC})
-SET_TARGET_PROPERTIES(GalaxyWeaver PROPERTIES FOLDER Utility)
+SET_TARGET_PROPERTIES (GalaxyWeaver PROPERTIES FOLDER Utility)
 
 # ---------------------------------------------------------------- #
 
@@ -723,14 +726,14 @@ FOREACH (FILE ${HEARTVIOLINER_SRC})
 	GET_FILENAME_COMPONENT(PARENT_DIR "${FILE}" PATH)
 
 	# skip src or include and changes /'s to \\'s
-	STRING(REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
-	STRING(REPLACE "/" "\\" GROUP "${GROUP}")
-	STRING(REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
+	STRING (REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
+	STRING (REPLACE "/" "\\" GROUP "${GROUP}")
+	STRING (REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
 	SOURCE_GROUP("${GROUP}" FILES "${FILE}")
 ENDFOREACH (FILE ${HEARTVIOLINER_SRC})
 
 ADD_LIBRARY (HeartVioliner ${HEARTVIOLINER_SRC})
-SET_TARGET_PROPERTIES(HeartVioliner PROPERTIES FOLDER Utility)
+SET_TARGET_PROPERTIES (HeartVioliner PROPERTIES FOLDER Utility)
 
 # ---------------------------------------------------------------- #
 
@@ -743,14 +746,14 @@ FOREACH (FILE ${LEAVESFLUTE_SRC})
 	GET_FILENAME_COMPONENT(PARENT_DIR "${FILE}" PATH)
 
 	# skip src or include and changes /'s to \\'s
-	STRING(REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
-	STRING(REPLACE "/" "\\" GROUP "${GROUP}")
-	STRING(REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
+	STRING (REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
+	STRING (REPLACE "/" "\\" GROUP "${GROUP}")
+	STRING (REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
 	SOURCE_GROUP("${GROUP}" FILES "${FILE}")
 ENDFOREACH (FILE ${LEAVESFLUTE_SRC})
 
 ADD_LIBRARY (LeavesFlute ${LEAVESFLUTE_SRC})
-SET_TARGET_PROPERTIES(LeavesFlute PROPERTIES FOLDER Utility)
+SET_TARGET_PROPERTIES (LeavesFlute PROPERTIES FOLDER Utility)
 
 
 # ---------------------------------------------------------------- #
@@ -764,14 +767,14 @@ FOREACH (FILE ${MYTHFOREST_SRC})
 	GET_FILENAME_COMPONENT(PARENT_DIR "${FILE}" PATH)
 
 	# skip src or include and changes /'s to \\'s
-	STRING(REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
-	STRING(REPLACE "/" "\\" GROUP "${GROUP}")
-	STRING(REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
+	STRING (REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
+	STRING (REPLACE "/" "\\" GROUP "${GROUP}")
+	STRING (REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
 	SOURCE_GROUP("${GROUP}" FILES "${FILE}")
 ENDFOREACH (FILE ${MYTHFOREST_SRC})
 
 ADD_LIBRARY (MythForest ${MYTHFOREST_SRC})
-SET_TARGET_PROPERTIES(MythForest PROPERTIES FOLDER Utility)
+SET_TARGET_PROPERTIES (MythForest PROPERTIES FOLDER Utility)
 
 # ---------------------------------------------------------------- #
 
@@ -784,14 +787,14 @@ FOREACH (FILE ${REMEMBERY_SRC})
 	GET_FILENAME_COMPONENT(PARENT_DIR "${FILE}" PATH)
 
 	# skip src or include and changes /'s to \\'s
-	STRING(REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
-	STRING(REPLACE "/" "\\" GROUP "${GROUP}")
-	STRING(REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
+	STRING (REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
+	STRING (REPLACE "/" "\\" GROUP "${GROUP}")
+	STRING (REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
 	SOURCE_GROUP("${GROUP}" FILES "${FILE}")
 ENDFOREACH (FILE ${REMEMBERY_SRC})
 
 ADD_LIBRARY (Remembery ${REMEMBERY_SRC})
-SET_TARGET_PROPERTIES(Remembery PROPERTIES FOLDER Utility)
+SET_TARGET_PROPERTIES (Remembery PROPERTIES FOLDER Utility)
 
 # ---------------------------------------------------------------- #
 
@@ -804,14 +807,14 @@ FOREACH (FILE ${SNOWYSTREAM_SRC})
 	GET_FILENAME_COMPONENT(PARENT_DIR "${FILE}" PATH)
 
 	# skip src or include and changes /'s to \\'s
-	STRING(REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
-	STRING(REPLACE "/" "\\" GROUP "${GROUP}")
-	STRING(REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
+	STRING (REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
+	STRING (REPLACE "/" "\\" GROUP "${GROUP}")
+	STRING (REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
 	SOURCE_GROUP("${GROUP}" FILES "${FILE}")
 ENDFOREACH (FILE ${SNOWYSTREAM_SRC})
 
 ADD_LIBRARY (SnowyStream ${SNOWYSTREAM_SRC})
-SET_TARGET_PROPERTIES(SnowyStream PROPERTIES FOLDER Utility)
+SET_TARGET_PROPERTIES (SnowyStream PROPERTIES FOLDER Utility)
 
 # ================================================================ #
 
@@ -824,14 +827,14 @@ FOREACH (FILE ${LEAVESWING_SRC})
 	GET_FILENAME_COMPONENT(PARENT_DIR "${FILE}" PATH)
 
 	# skip src or include and changes /'s to \\'s
-	STRING(REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
-	STRING(REPLACE "/" "\\" GROUP "${GROUP}")
-	STRING(REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
+	STRING (REGEX REPLACE "(\\./)?(src|include)/?" "" GROUP "${PARENT_DIR}")
+	STRING (REPLACE "/" "\\" GROUP "${GROUP}")
+	STRING (REPLACE "${LOCAL_SOURCE_DIR}" "" GROUP "${GROUP}")
 	SOURCE_GROUP("${GROUP}" FILES "${FILE}")
 ENDFOREACH (FILE ${LEAVESWING_SRC})
 
 ADD_EXECUTABLE (LeavesWing ${LEAVESWING_SRC})
-SET_TARGET_PROPERTIES(LeavesWing PROPERTIES FOLDER Shell)
+SET_TARGET_PROPERTIES (LeavesWing PROPERTIES FOLDER Shell)
 
 SET (PAINTSNOW_LIBRARIES
 	LeavesFlute Remembery MythForest SnowyStream BridgeSunset PurpleTrail IceFlow HeartVioliner EchoLegend GalaxyWeaver PaintsNow
@@ -861,6 +864,10 @@ IF (ADD_AUDIO_LAME)
 	SET (PAINTSNOW_LIBRARIES ${PAINTSNOW_LIBRARIES} mp3lame)
 ENDIF (ADD_AUDIO_LAME)
 
+IF (ADD_RENDER_VULKAN)
+	SET (PAINTSNOW_LIBRARIES ${PAINTSNOW_LIBRARIES} ${Vulkan_LIBRARIES})
+ENDIF (ADD_RENDER_VULKAN)
+
 IF (MSVC)
 
 ELSE (MSVC)
@@ -871,10 +878,6 @@ ELSE (MSVC)
 	IF (ADD_NETWORK_LIBEVENT)
 		SET (PAINTSNOW_LIBRARIES ${PAINTSNOW_LIBRARIES} event_pthreads)
 	ENDIF (ADD_NETWORK_LIBEVENT)
-
-	IF (ADD_RENDER_VULKAN)
-		SET (PAINTSNOW_LIBRARIES ${PAINTSNOW_LIBRARIES} vulkan)
-	ENDIF (ADD_RENDER_VULKAN)
 
 	IF (ADD_THREAD_PTHREAD)
 		SET (PAINTSNOW_LIBRARIES ${PAINTSNOW_LIBRARIES} pthread)
@@ -891,7 +894,7 @@ FILE (GLOB_RECURSE LOSTDREAM_SRC
 )
 
 ADD_EXECUTABLE (LostDream ${LOSTDREAM_SRC})
-SET_TARGET_PROPERTIES(LostDream PROPERTIES FOLDER Shell)
+SET_TARGET_PROPERTIES (LostDream PROPERTIES FOLDER Shell)
 
 TARGET_LINK_LIBRARIES (LostDream ${PAINTSNOW_LIBRARIES})
 
@@ -901,7 +904,7 @@ FILE (GLOB_RECURSE WINDTOWER_SRC
 )
 
 ADD_EXECUTABLE (WindTower ${WINDTOWER_SRC})
-SET_TARGET_PROPERTIES(WindTower PROPERTIES FOLDER Shell)
+SET_TARGET_PROPERTIES (WindTower PROPERTIES FOLDER Shell)
 
 TARGET_LINK_LIBRARIES (WindTower ${PAINTSNOW_LIBRARIES})
 
