@@ -150,17 +150,6 @@ void LightComponent::ShadowLayer::StreamRefreshHandler(Engine& engine, const USh
 	taskData->rootEntity = shadowContext->rootEntity; // in case of gc
 	taskData->shadowGrid = shadowGrid();
 
-	// Prepare render target
-	IRender::Resource::RenderTargetDescription& desc = *static_cast<IRender::Resource::RenderTargetDescription*>(render.MapResource(taskData->renderQueue, taskData->renderTargetResource, 0));
-	desc.depthStorage.loadOp = desc.stencilStorage.loadOp = IRender::Resource::RenderTargetDescription::CLEAR;
-	desc.depthStorage.storeOp = desc.stencilStorage.storeOp = IRender::Resource::RenderTargetDescription::DEFAULT;
-	desc.depthStorage.resource = shadowGrid->texture->GetRenderResource();
-	desc.dimension = dim;
-
-	render.UnmapResource(taskData->renderQueue, taskData->renderTargetResource, IRender::MAP_DATA_EXCHANGE);
-	render.ExecuteResource(taskData->renderQueue, taskData->stateResource);
-	render.ExecuteResource(taskData->renderQueue, taskData->renderTargetResource);
-
 	CollectComponentsFromEntity(engine, *taskData, instanceData, captureData, shadowContext->rootEntity());
 }
 
@@ -252,9 +241,7 @@ void LightComponentConfig::TaskData::RenderFrame(Engine& engine) {
 
 	assert(Flag().load(std::memory_order_acquire) & (TINY_MODIFIED | TINY_ACTIVATED));
 	// engine.mythForest.StartCaptureFrame("lightdebug", "");
-	std::vector<IRender::Queue*> renderQueues;
-	renderQueues.emplace_back(renderQueue);
-	engine.interfaces.render.SubmitQueues(&renderQueues[0], verify_cast<uint32_t>(renderQueues.size()), IRender::SUBMIT_EXECUTE_ALL);
+	engine.interfaces.render.SubmitQueues(&renderQueue, 1u, IRender::SUBMIT_EXECUTE_ALL);
 	shadowGrid->Flag().fetch_and(~(TINY_MODIFIED | TINY_UPDATING), std::memory_order_release);
 	shadowGrid = nullptr;
 	Flag().fetch_and(~TINY_MODIFIED, std::memory_order_release);
@@ -271,6 +258,18 @@ void LightComponent::ShadowLayer::CompleteCollect(Engine& engine, TaskData& task
 		// assemble 
 		IRender::Queue* queue = taskData.renderQueue;
 		IRender& render = engine.interfaces.render;
+
+		// Prepare render target
+		TShared<ShadowGrid> shadowGrid = taskData.shadowGrid->QueryInterface(UniqueType<ShadowGrid>());
+		IRender::Resource::RenderTargetDescription& descRenderTarget = *static_cast<IRender::Resource::RenderTargetDescription*>(render.MapResource(queue, taskData.renderTargetResource, 0));
+		descRenderTarget.depthStorage.loadOp = descRenderTarget.stencilStorage.loadOp = IRender::Resource::RenderTargetDescription::CLEAR;
+		descRenderTarget.depthStorage.storeOp = descRenderTarget.stencilStorage.storeOp = IRender::Resource::RenderTargetDescription::DEFAULT;
+		descRenderTarget.depthStorage.resource = shadowGrid->texture->GetRenderResource();
+		descRenderTarget.dimension = UShort3(resolution.x(), resolution.y(), 1);
+		
+		render.UnmapResource(queue, taskData.renderTargetResource, IRender::MAP_DATA_EXCHANGE);
+		render.ExecuteResource(queue, taskData.stateResource);
+		render.ExecuteResource(queue, taskData.renderTargetResource);
 
 		IRender::Resource* buffer = render.CreateResource(render.GetQueueDevice(queue), IRender::Resource::RESOURCE_BUFFER);
 
@@ -575,18 +574,6 @@ void LightComponent::ShadowLayer::Initialize(Engine& engine, const TShared<Strea
 		String path = ShaderResource::GetShaderPathPrefix() + UniqueType<ConstMapPass>::Get()->GetBriefName();
 		pipeline = engine.snowyStream.CreateReflectedResource(UniqueType<ShaderResource>(), path, true, ResourceBase::RESOURCE_VIRTUAL)->QueryInterface(UniqueType<ShaderResourceImpl<ConstMapPass> >());
 	}
-
-	TShared<TextureResource> texture = engine.snowyStream.CreateReflectedResource(UniqueType<TextureResource>(), ResourceBase::GenerateLocation("LightShadowBakeDummy", this), false, ResourceBase::RESOURCE_VIRTUAL);
-	texture->description.dimension = UShort3(res.x(), res.y(), 0);
-	texture->description.state.attachment = true;
-	texture->description.state.format = IRender::Resource::TextureDescription::UNSIGNED_BYTE;
-	texture->description.state.layout = IRender::Resource::TextureDescription::R;
-	texture->description.state.addressU = texture->description.state.addressV = texture->description.state.addressW = IRender::Resource::TextureDescription::CLAMP;
-	texture->description.state.sample = IRender::Resource::TextureDescription::POINT;
-	texture->Flag().fetch_or(Tiny::TINY_MODIFIED, std::memory_order_relaxed);
-	texture->GetResourceManager().InvokeUpload(texture(), engine.snowyStream.GetRenderResourceManager()->GetWarpResourceQueue());
-
-	dummyColorAttachment = texture;
 
 	if (!currentTask) {
 		currentTask = TShared<TaskData>::From(new TaskData(engine, engine.GetKernel().GetWarpCount(), res));

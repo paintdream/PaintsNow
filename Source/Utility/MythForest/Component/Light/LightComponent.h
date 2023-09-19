@@ -145,7 +145,6 @@ namespace PaintsNow {
 
 		protected:
 			TShared<StreamComponent> streamComponent;
-			TShared<TextureResource> dummyColorAttachment;
 			TShared<ShaderResourceImpl<ConstMapPass> > pipeline;
 			TShared<TaskData> currentTask;
 			TShared<ShadowGrid> currentGrid; // last known good one
