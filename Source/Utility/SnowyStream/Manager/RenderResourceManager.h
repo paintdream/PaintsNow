@@ -31,8 +31,6 @@ namespace PaintsNow {
 		size_t GetCurrentRuntimeVersion() const;
 		size_t GetNextRuntimeVersion() const;
 		uint32_t GetFrameIndex() const;
-		bool GetCompleted() const;
-		void WaitForCompleted(uint32_t delayedMilliseconds = 50);
 
 		TObject<IReflect>& operator () (IReflect& reflect) override;
 

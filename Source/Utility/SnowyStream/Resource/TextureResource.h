@@ -29,13 +29,9 @@ namespace PaintsNow {
 		IRender::Resource* GetRenderResource() const;
 		IRender::Resource::TextureDescription description;
 
-		TShared<TextureResource> MapRawTexture();
-
 	private:
 		IRender::Resource* instance;
 		size_t deviceMemoryUsage;
-		TShared<TextureResource> rawTexture;
-		std::atomic<uint32_t> mapRawDataCount;
 	};
 }
 

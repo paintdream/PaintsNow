@@ -306,29 +306,3 @@ IStreamBase* TextureResource::OpenArchive(IArchive& archive, const String& exten
 	}
 }
 
-TShared<TextureResource> TextureResource::MapRawTexture() {
-	if (rawTexture() != nullptr) {
-		rawTexture->Map();
-		return rawTexture;
-	} else if (Flag().load(std::memory_order_acquire) & RESOURCE_COMPRESSED) {
-		TShared<ResourceBase> raw = resourceManager.GetUniformResourceManager().CreateResource(GetLocation() + '$', "TextureResource", true, RESOURCE_MAPPED);
-
-		if (raw() != nullptr) {
-			TShared<TextureResource> tex = raw->QueryInterface(UniqueType<TextureResource>());
-			assert(tex() != nullptr);
-
-			TSpinLockGuard<uint32_t> guard(critical);
-			if (rawTexture() != nullptr) {
-				rawTexture = tex;
-			}
-
-			return tex;
-		} else {
-			return nullptr;
-		}
-	} else {
-		Map();
-		return this;
-	}
-}
-

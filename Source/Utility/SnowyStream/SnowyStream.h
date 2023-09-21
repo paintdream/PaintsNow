@@ -242,12 +242,6 @@ namespace PaintsNow {
 		/// <returns> the profile information </returns>
 		size_t RequestGetRenderProfile(IScript::Request& request, const String& feature);
 
-		/// <summary>
-		/// Check if all pending resources is completed
-		/// </summary>
-		/// <returns> true if all pending resources is completed. </returns>
-		bool RequestGetRenderResourcesCompleted(IScript::Request& request);
-
 	public:
 		template <class T, class M>
 		bool RegisterResourceSerializer(const String& extension, T& device, ResourceCreator* serializer, void* context, UniqueType<M> managerType) {

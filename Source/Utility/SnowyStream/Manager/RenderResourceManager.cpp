@@ -429,21 +429,6 @@ size_t RenderResourceManager::NotifyCompletion(const TShared<ResourceBase>& reso
 	}
 }
 
-bool RenderResourceManager::GetCompleted() const {
-	// assert(currentRuntimeVersion.load(std::memory_order_acquire) <= nextRuntimeVersion.load(std::memory_order_acquire));
-	return currentRuntimeVersion.load(std::memory_order_acquire) == nextRuntimeVersion.load(std::memory_order_acquire);
-}
-
-void RenderResourceManager::WaitForCompleted(uint32_t delayedMilliseconds) {
-	WarpYieldGuard guard(kernel);
-
-	ThreadPool& threadPool = kernel.GetThreadPool();
-	uint32_t threadIndex = threadPool.GetCurrentThreadIndex();
-	while (!GetCompleted()) {
-		threadPool.PollDelay(threadIndex, delayedMilliseconds);
-	}
-}
-
 uint32_t RenderResourceManager::GetFrameIndex() const {
 	return frameIndex.load(std::memory_order_relaxed);
 }

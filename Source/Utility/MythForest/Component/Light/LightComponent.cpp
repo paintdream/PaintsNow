@@ -101,9 +101,6 @@ void LightComponent::ShadowLayer::StreamRefreshHandler(Engine& engine, const USh
 	if (!(tiny->Flag().load(std::memory_order_acquire) & TINY_MODIFIED))
 		return;
 	
-	if (!engine.snowyStream.GetRenderResourceManager()->GetCompleted())
-		return;
-
 	TShared<TaskData>& taskData = currentTask;
 	if (taskData->Flag().fetch_or(TINY_MODIFIED, std::memory_order_relaxed) & TINY_MODIFIED)
 		return;

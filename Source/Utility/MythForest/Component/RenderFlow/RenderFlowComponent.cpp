@@ -187,7 +187,7 @@ void RenderFlowComponent::Render(Engine& engine) {
 		assert(cachedRenderStages[cachedRenderStages.size() - 1] == nullptr);
 
 		IRender::Resource::EventDescription& desc = *static_cast<IRender::Resource::EventDescription*>(render.MapResource(mainQueue, eventResourcePrepared, IRender::MAP_DATA_EXCHANGE));
-		if (desc.counter != 0 && engine.snowyStream.GetRenderResourceManager()->GetCompleted()) {
+		if (desc.counter != 0) {
 			desc.counter = 0;
 			Flag().fetch_or(RENDERFLOWCOMPONENT_RESOURCE_PREPARED, std::memory_order_release);
 		}
