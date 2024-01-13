@@ -6423,13 +6423,13 @@ void VmaBlockMetadata::PrintDetailedMap_Begin(class VmaJsonWriter& json,
     json.WriteNumber(GetSize());
 
     json.WriteString("UnusedBytes");
-    json.WriteSize(unusedBytes);
+    json.WriteSize((size_t)unusedBytes);
 
     json.WriteString("Allocations");
-    json.WriteSize(allocationCount);
+    json.WriteSize((size_t)allocationCount);
 
     json.WriteString("UnusedRanges");
-    json.WriteSize(unusedRangeCount);
+    json.WriteSize((size_t)unusedRangeCount);
 
     json.WriteString("Suballocations");
     json.BeginArray();

@@ -2,6 +2,7 @@
 #pragma warning(disable:4786)
 #endif
 #define VMA_IMPLEMENTATION
+#define VMA_VULKAN_VERSION 1001000
 #include "Core/vk_mem_alloc.h"
 
 #include "../../../Interface/Interfaces.h"
@@ -103,18 +104,22 @@ public:
 		allocatorInfo.instance = instance;
 		vmaCreateAllocator(&allocatorInfo, &vmaAllocator);
 
-		for (size_t k = 0; k < sizeof(descriptorAllocators) / sizeof(descriptorAllocators[0]); k++) {
-			VkDescriptorPoolCreateInfo poolInfo = {};
-			poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-			poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-			poolInfo.maxSets = MAX_DESCRIPTOR_COUNT;
-			poolInfo.poolSizeCount = 1;
-			VkDescriptorPoolSize size;
+		static constexpr size_t DESCRITPOR_TYPE_COUNT = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT + 1;
+
+		VkDescriptorPoolSize sizes[DESCRITPOR_TYPE_COUNT];
+		for (size_t k = 0; k < DESCRITPOR_TYPE_COUNT; k++) {
+			VkDescriptorPoolSize& size = sizes[k];
 			size.descriptorCount = MAX_DESCRIPTOR_COUNT;
 			size.type = (VkDescriptorType)k;
-			poolInfo.pPoolSizes = &size;
-			Verify("create descriptor pool", vkCreateDescriptorPool(device, &poolInfo, allocator, &descriptorAllocators[k]));
 		}
+		
+		VkDescriptorPoolCreateInfo poolInfo = {};
+		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+		poolInfo.maxSets = MAX_DESCRIPTOR_COUNT;
+		poolInfo.poolSizeCount = DESCRITPOR_TYPE_COUNT;
+		poolInfo.pPoolSizes = sizes;
+		Verify("create descriptor pool", vkCreateDescriptorPool(device, &poolInfo, allocator, &descriptorAllocatorPool));
 
 		vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProps);
 
@@ -165,11 +170,7 @@ public:
 		DestroyAllFrames(allocator);
 		vkDestroyCommandPool(device, mainCommandPool, allocator);
 		vkDestroySwapchainKHR(device, swapChain, allocator);
-
-		for (size_t k = 0; k < sizeof(descriptorAllocators) / sizeof(descriptorAllocators[0]); k++) {
-			vkDestroyDescriptorPool(device, descriptorAllocators[k], allocator);
-		}
-
+		vkDestroyDescriptorPool(device, descriptorAllocatorPool, allocator);
 		vmaDestroyAllocator(vmaAllocator);
 		vkDestroyDevice(device, allocator);
 	}
@@ -280,7 +281,7 @@ public:
 	VmaAllocator vmaAllocator;
 
 	VkPhysicalDeviceMemoryProperties memoryProps;
-	VkDescriptorPool descriptorAllocators[VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT + 1];
+	VkDescriptorPool descriptorAllocatorPool;
 	uint32_t queueFamily;
 	uint32_t currentFrameIndex;
 	uint32_t currentSemaphoreIndex;
@@ -344,18 +345,11 @@ public:
 		uint32_t commandCount;
 		QueueImplVulkan* hostQueue;
 		VkCommandBuffer buffer;
-
-		struct Descriptor {
-			Descriptor(VkDescriptorPool p, VkDescriptorSet s) : pool(p), descriptor(s) {}
-			VkDescriptorPool pool;
-			VkDescriptorSet descriptor;
-		};
-
 		std::vector<VkPipelineLayout> deletedPipelineLayouts;
 		std::vector<VkDescriptorSetLayout> deletedDescriptorSetLayouts;
 		std::vector<VkPipeline> deletedPipelines;
 		std::vector<VkShaderModule> deletedShaderModules;
-		std::vector<Descriptor> deletedDescriptors;
+		std::vector<VkDescriptorSet> deletedDescriptorSets;
 		std::vector<VkRenderPass> deletedRenderPasses;
 		std::vector<VkFramebuffer> deletedFramebuffers;
 		std::vector<std::pair<VkBuffer, VmaAllocation>> deletedBuffers;
@@ -513,8 +507,8 @@ public:
 
 		do {
 			TSpinLockGuard<size_t> guard(device->descriptorCritical);
-			for (BufferNode::Descriptor& descriptor : node.deletedDescriptors) {
-				vkFreeDescriptorSets(dev, descriptor.pool, 1, &descriptor.descriptor);
+			if (!node.deletedDescriptorSets.empty()) {
+				vkFreeDescriptorSets(dev, device->descriptorAllocatorPool, node.deletedDescriptorSets.size(), &node.deletedDescriptorSets[0]);
 			}
 		} while (false);
 
@@ -1614,22 +1608,12 @@ public:
 
 class VulkanDrawCallResourceBase {
 public:
-	VulkanDrawCallResourceBase() : descriptorSetTexture(VK_NULL_HANDLE), descriptorSetUniformBuffer(VK_NULL_HANDLE), descriptorSetStorageBuffer(VK_NULL_HANDLE) {}
+	VulkanDrawCallResourceBase() : descriptorSet(VK_NULL_HANDLE) {}
 
 	void Delete(QueueImplVulkan& queue) {
-		if (descriptorSetTexture != VK_NULL_HANDLE) {
-			queue.currentCommandBuffer.deletedDescriptors.emplace_back(queue.device->descriptorAllocators[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER], descriptorSetTexture);
-			descriptorSetTexture = VK_NULL_HANDLE;
-		}
-
-		if (descriptorSetUniformBuffer != VK_NULL_HANDLE) {
-			queue.currentCommandBuffer.deletedDescriptors.emplace_back(queue.device->descriptorAllocators[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER], descriptorSetUniformBuffer);
-			descriptorSetUniformBuffer = VK_NULL_HANDLE;
-		}
-
-		if (descriptorSetStorageBuffer != VK_NULL_HANDLE) {
-			queue.currentCommandBuffer.deletedDescriptors.emplace_back(queue.device->descriptorAllocators[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER], descriptorSetStorageBuffer);
-			descriptorSetStorageBuffer = VK_NULL_HANDLE;
+		if (descriptorSet != VK_NULL_HANDLE) {
+			queue.currentCommandBuffer.deletedDescriptorSets.emplace_back(descriptorSet);
+			descriptorSet = VK_NULL_HANDLE;
 		}
 
 		// delete this;
@@ -1638,10 +1622,7 @@ public:
 	void UploadImpl(QueueImplVulkan& queue, IRender::Resource* shaderResource, IRender::Resource::DrawCallDescription::BufferRange* bufferResources, uint32_t bufferCount, IRender::Resource** textureResources, uint32_t textureCount);
 	void ExecuteImpl(QueueImplVulkan& queue, IRender::Resource* shaderResource, IRender::Resource::DrawCallDescription::BufferRange* indexBuffer, IRender::Resource::DrawCallDescription::BufferRange* bufferResources, uint32_t bufferCount, IRender::Resource** textureResources, uint32_t textureCount, const UInt3& instanceCounts);
 
-	VkDescriptorSet descriptorSetTexture;
-	VkDescriptorSet descriptorSetUniformBuffer;
-	VkDescriptorSet descriptorSetStorageBuffer;
-
+	VkDescriptorSet descriptorSet;
 	Bytes drawSignature;
 };
 
@@ -2016,7 +1997,7 @@ template <>
 class ResourceImplVulkan<IRender::Resource::ShaderDescription> final
 	: public ResourceBaseVulkanDesc<IRender::Resource::ShaderDescription, IRender::Resource::RESOURCE_SHADER, ResourceImplVulkan<IRender::Resource::ShaderDescription> > {
 public:
-	ResourceImplVulkan() : descriptorSetLayoutTexture(VK_NULL_HANDLE), descriptorSetLayoutUniformBuffer(VK_NULL_HANDLE), descriptorSetLayoutStorageBuffer(VK_NULL_HANDLE), pipelineLayout(VK_NULL_HANDLE) {
+	ResourceImplVulkan() : descriptorSetLayout(VK_NULL_HANDLE), pipelineLayout(VK_NULL_HANDLE) {
 		memset(shaderModules, 0, sizeof(shaderModules));
 	}
 
@@ -2026,19 +2007,9 @@ public:
 			pipelineLayout = VK_NULL_HANDLE;
 		}
 
-		if (descriptorSetLayoutTexture != VK_NULL_HANDLE) {
-			queue.currentCommandBuffer.deletedDescriptorSetLayouts.emplace_back(descriptorSetLayoutTexture);
-			descriptorSetLayoutTexture = VK_NULL_HANDLE;
-		}
-
-		if (descriptorSetLayoutUniformBuffer != VK_NULL_HANDLE) {
-			queue.currentCommandBuffer.deletedDescriptorSetLayouts.emplace_back(descriptorSetLayoutUniformBuffer);
-			descriptorSetLayoutUniformBuffer = VK_NULL_HANDLE;
-		}
-
-		if (descriptorSetLayoutStorageBuffer != VK_NULL_HANDLE) {
-			queue.currentCommandBuffer.deletedDescriptorSetLayouts.emplace_back(descriptorSetLayoutStorageBuffer);
-			descriptorSetLayoutStorageBuffer = VK_NULL_HANDLE;
+		if (descriptorSetLayout != VK_NULL_HANDLE) {
+			queue.currentCommandBuffer.deletedDescriptorSetLayouts.emplace_back(descriptorSetLayout);
+			descriptorSetLayout = VK_NULL_HANDLE;
 		}
 
 		for (size_t k = 0; k < stateInstances.size(); k++) {
@@ -2237,9 +2208,8 @@ public:
 			}
 		}
 
-		textureBindings.clear();
-		uniformBufferBindings.clear();
-		storageBufferBindings.clear();
+		descriptorBufferBindings.clear();
+		descriptorTextureBindings.clear();
 
 		uint32_t bindingIndex = 0;
 		for (size_t k = 0; k < Resource::ShaderDescription::END; k++) {
@@ -2311,12 +2281,7 @@ public:
 						binding.stageFlags = stageFlags;
 						binding.pImmutableSamplers = nullptr;
 						binding.binding = item.binding;
-
-						if (bindBuffer->description.state.usage == IRender::Resource::BufferDescription::UNIFORM) {
-							uniformBufferBindings.emplace_back(std::move(binding));
-						} else {
-							storageBufferBindings.emplace_back(std::move(binding));
-						}
+						descriptorBufferBindings.emplace_back(std::move(binding));
 					}
 				}
 
@@ -2326,9 +2291,8 @@ public:
 					binding.descriptorCount = 1;
 					binding.stageFlags = stageFlags;
 					binding.binding = declaration.textureBindings[m].binding;
-
 					binding.pImmutableSamplers = nullptr;
-					textureBindings.emplace_back(binding);
+					descriptorTextureBindings.emplace_back(std::move(binding));
 				}
 			}
 
@@ -2389,39 +2353,21 @@ public:
 		// VkPushConstantRange 
 		// Format descriptor layout sets
 
-		uint32_t layoutCount = 0;
-		VkDescriptorSetLayout layouts[3] = {};
-		if (!textureBindings.empty()) {
+		if (!descriptorTextureBindings.empty() || !descriptorBufferBindings.empty()) {
+			std::vector<VkDescriptorSetLayoutBinding> mergedBindings = descriptorBufferBindings;
+			mergedBindings.insert(mergedBindings.end(), descriptorTextureBindings.begin(), descriptorTextureBindings.end());
+
 			VkDescriptorSetLayoutCreateInfo textureInfo = {};
 			textureInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			textureInfo.bindingCount = (uint32_t)textureBindings.size();
-			textureInfo.pBindings = &textureBindings[0];
-			Verify("create descriptor set layout", vkCreateDescriptorSetLayout(device->device, &textureInfo, device->allocator, &descriptorSetLayoutTexture));
-			layouts[layoutCount++] = descriptorSetLayoutTexture;
-		}
-
-		if (!uniformBufferBindings.empty()) {
-			VkDescriptorSetLayoutCreateInfo bufferInfo = {};
-			bufferInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			bufferInfo.bindingCount = (uint32_t)uniformBufferBindings.size();
-			bufferInfo.pBindings = &uniformBufferBindings[0];
-			Verify("create descriptor set layout", vkCreateDescriptorSetLayout(device->device, &bufferInfo, device->allocator, &descriptorSetLayoutUniformBuffer));
-			layouts[layoutCount++] = descriptorSetLayoutUniformBuffer;
-		}
-
-		if (!storageBufferBindings.empty()) {
-			VkDescriptorSetLayoutCreateInfo bufferInfo = {};
-			bufferInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			bufferInfo.bindingCount = (uint32_t)storageBufferBindings.size();
-			bufferInfo.pBindings = &storageBufferBindings[0];
-			Verify("create descriptor set layout", vkCreateDescriptorSetLayout(device->device, &bufferInfo, device->allocator, &descriptorSetLayoutStorageBuffer));
-			layouts[layoutCount++] = descriptorSetLayoutStorageBuffer;
+			textureInfo.bindingCount = (uint32_t)mergedBindings.size();
+			textureInfo.pBindings = &mergedBindings[0];
+			Verify("create descriptor set layout", vkCreateDescriptorSetLayout(device->device, &textureInfo, device->allocator, &descriptorSetLayout));
 		}
 	
 		VkPipelineLayoutCreateInfo layoutInfo = {};
 		layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		layoutInfo.setLayoutCount = layoutCount;
-		layoutInfo.pSetLayouts = layouts;
+		layoutInfo.setLayoutCount = 1;
+		layoutInfo.pSetLayouts = &descriptorSetLayout;
 		layoutInfo.pushConstantRangeCount = 0;
 		layoutInfo.pPushConstantRanges = nullptr;
 
@@ -2432,13 +2378,9 @@ public:
 		}
 	}
 
-	VkDescriptorSetLayout descriptorSetLayoutTexture;
-	VkDescriptorSetLayout descriptorSetLayoutUniformBuffer;
-	VkDescriptorSetLayout descriptorSetLayoutStorageBuffer;
-	
-	std::vector<VkDescriptorSetLayoutBinding> textureBindings;
-	std::vector<VkDescriptorSetLayoutBinding> uniformBufferBindings;
-	std::vector<VkDescriptorSetLayoutBinding> storageBufferBindings;
+	VkDescriptorSetLayout descriptorSetLayout;
+	std::vector<VkDescriptorSetLayoutBinding> descriptorBufferBindings;
+	std::vector<VkDescriptorSetLayoutBinding> descriptorTextureBindings;
 
 	VkPipelineLayout pipelineLayout;
 	VkShaderModule shaderModules[IRender::Resource::ShaderDescription::Stage::END];
@@ -2783,43 +2725,23 @@ void VulkanDrawCallResourceBase::UploadImpl(QueueImplVulkan& queue, IRender::Res
 	ResourceImplVulkan<IRender::Resource::ShaderDescription>* shader = static_cast<ResourceImplVulkan<IRender::Resource::ShaderDescription>*>(shaderResource);
 
 	DeviceImplVulkan* device = queue.device;
-	if (descriptorSetTexture == VK_NULL_HANDLE && shader->descriptorSetLayoutTexture != VK_NULL_HANDLE) {
+	if (descriptorSet == VK_NULL_HANDLE && shader->descriptorSetLayout != VK_NULL_HANDLE) {
 		VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
 		descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		descriptorSetAllocateInfo.descriptorPool = device->descriptorAllocators[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER];
+		descriptorSetAllocateInfo.descriptorPool = device->descriptorAllocatorPool;
 		descriptorSetAllocateInfo.descriptorSetCount = 1;
-		descriptorSetAllocateInfo.pSetLayouts = &shader->descriptorSetLayoutTexture;
+		descriptorSetAllocateInfo.pSetLayouts = &shader->descriptorSetLayout;
 
 		TSpinLockGuard<size_t> guard(device->descriptorCritical);
-		vkAllocateDescriptorSets(device->device, &descriptorSetAllocateInfo, &descriptorSetTexture);
-	}
-
-	if (descriptorSetUniformBuffer == VK_NULL_HANDLE && shader->descriptorSetLayoutUniformBuffer != VK_NULL_HANDLE) {
-		VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
-		descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		descriptorSetAllocateInfo.descriptorPool = device->descriptorAllocators[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER];
-		descriptorSetAllocateInfo.descriptorSetCount = 1;
-		descriptorSetAllocateInfo.pSetLayouts = &shader->descriptorSetLayoutUniformBuffer;
-
-		TSpinLockGuard<size_t> guard(device->descriptorCritical);
-		vkAllocateDescriptorSets(device->device, &descriptorSetAllocateInfo, &descriptorSetUniformBuffer);
-	}
-
-	if (descriptorSetStorageBuffer == VK_NULL_HANDLE && shader->descriptorSetLayoutStorageBuffer != VK_NULL_HANDLE) {
-		VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
-		descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		descriptorSetAllocateInfo.descriptorPool = device->descriptorAllocators[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER];
-		descriptorSetAllocateInfo.descriptorSetCount = 1;
-		descriptorSetAllocateInfo.pSetLayouts = &shader->descriptorSetLayoutStorageBuffer;
-
-		TSpinLockGuard<size_t> guard(device->descriptorCritical);
-		vkAllocateDescriptorSets(device->device, &descriptorSetAllocateInfo, &descriptorSetStorageBuffer);
+		vkAllocateDescriptorSets(device->device, &descriptorSetAllocateInfo, &descriptorSet);
 	}
 
 	// upload bindings
-	std::vector<VkDescriptorBufferInfo> uniformBufferInfos;
-	std::vector<VkDescriptorBufferInfo> storageBufferInfos;
+	std::vector<VkDescriptorBufferInfo> bufferInfos;
 	std::vector<VkDescriptorImageInfo> imageInfos;
+	std::vector<VkWriteDescriptorSet> writes;
+
+	imageInfos.reserve(textureCount);
 
 	for (uint32_t i = 0; i < bufferCount; i++) {
 		const IRender::Resource::DrawCallDescription::BufferRange& bufferRange = bufferResources[i];
@@ -2841,12 +2763,7 @@ void VulkanDrawCallResourceBase::UploadImpl(QueueImplVulkan& queue, IRender::Res
 			info.buffer = buffer->buffer;
 			info.offset = bufferRange.offset;
 			info.range = bufferRange.length == 0 ? buffer->memorySize : bufferRange.length;
-
-			if (desc.state.usage == IRender::Resource::BufferDescription::UNIFORM) {
-				uniformBufferInfos.emplace_back(std::move(info));
-			} else {
-				storageBufferInfos.emplace_back(std::move(info));
-			}
+			bufferInfos.emplace_back(std::move(info));
 		} else {
 			assert(false); // not supported by now
 		}
@@ -2854,50 +2771,41 @@ void VulkanDrawCallResourceBase::UploadImpl(QueueImplVulkan& queue, IRender::Res
 
 	for (uint32_t i = 0; i < textureCount; i++) {
 		ResourceImplVulkan<IRender::Resource::TextureDescription>* texture = static_cast<ResourceImplVulkan<IRender::Resource::TextureDescription>*>(textureResources[i]);
-
 		VkDescriptorImageInfo info = {};
 		info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		info.imageView = texture->imageViewDepthAspect == VK_NULL_HANDLE ? texture->imageView : texture->imageViewDepthAspect;
 		info.sampler = texture->imageSampler;
-
 		imageInfos.emplace_back(std::move(info));
 	}
 
-	assert(imageInfos.size() == shader->textureBindings.size());
-	for (uint32_t n = 0; n < imageInfos.size(); n++) {
+	assert(bufferInfos.size() == shader->descriptorBufferBindings.size());
+	for (uint32_t m = 0; m < bufferInfos.size(); m++) {
 		VkWriteDescriptorSet desc = {};
 		desc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		desc.dstSet = descriptorSetTexture;
-		desc.dstBinding = shader->textureBindings[n].binding;
+		desc.dstSet = descriptorSet;
+		desc.dstBinding = shader->descriptorBufferBindings[m].binding;
 		desc.descriptorCount = 1;
-		desc.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		desc.descriptorType = shader->descriptorBufferBindings[m].descriptorType;
+		desc.pBufferInfo = &bufferInfos[m];
+
+		writes.emplace_back(std::move(desc));
+	}
+
+	assert(imageInfos.size() == shader->descriptorTextureBindings.size());
+	for (size_t n = 0; n < imageInfos.size(); n++) {
+		VkWriteDescriptorSet desc = {};
+		desc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		desc.dstSet = descriptorSet;
+		desc.dstBinding = shader->descriptorTextureBindings[n].binding;
+		desc.descriptorCount = 1;
+		desc.descriptorType = shader->descriptorTextureBindings[n].descriptorType;
 		desc.pImageInfo = &imageInfos[n];
 
-		vkUpdateDescriptorSets(device->device, 1, &desc, 0, nullptr);
+		writes.emplace_back(std::move(desc));
 	}
 
-	assert(uniformBufferInfos.size() == shader->uniformBufferBindings.size());
-	for (uint32_t m = 0; m < uniformBufferInfos.size(); m++) {
-		VkWriteDescriptorSet desc = {};
-		desc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		desc.dstSet = descriptorSetUniformBuffer;
-		desc.dstBinding = shader->uniformBufferBindings[m].binding;
-		desc.descriptorCount = 1;
-		desc.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		desc.pBufferInfo = &uniformBufferInfos[m];
-		vkUpdateDescriptorSets(device->device, 1, &desc, 0, nullptr);
-	}
-
-	assert(storageBufferInfos.size() == shader->storageBufferBindings.size());
-	for (uint32_t t = 0; t < storageBufferInfos.size(); t++) {
-		VkWriteDescriptorSet desc = {};
-		desc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		desc.dstSet = descriptorSetStorageBuffer;
-		desc.dstBinding = shader->storageBufferBindings[t].binding;
-		desc.descriptorCount = 1;
-		desc.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-		desc.pBufferInfo = &storageBufferInfos[t];
-		vkUpdateDescriptorSets(device->device, 1, &desc, 0, nullptr);
+	if (!writes.empty()) {
+		vkUpdateDescriptorSets(device->device, writes.size(), &writes[0], 0, nullptr);
 	}
 
 	drawSignature.Resize(signatureBuffer.size() * sizeof(DrawSignatureItem));
@@ -2921,22 +2829,8 @@ void VulkanDrawCallResourceBase::ExecuteImpl(QueueImplVulkan& queue, IRender::Re
 	VkCommandBuffer commandBuffer = queue.currentCommandBuffer.buffer;
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineInstance.pipeline);
 	queue.currentCommandBuffer.commandCount++;
-	VkDescriptorSet descriptors[3];
-	uint32_t i = 0;
-	if (descriptorSetTexture != VK_NULL_HANDLE) {
-		descriptors[i++] = descriptorSetTexture;
-	}
-
-	if (descriptorSetUniformBuffer != VK_NULL_HANDLE) {
-		descriptors[i++] = descriptorSetUniformBuffer;
-	}
-
-	if (descriptorSetStorageBuffer != VK_NULL_HANDLE) {
-		descriptors[i++] = descriptorSetStorageBuffer;
-	}
-
-	if (i != 0) {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->pipelineLayout, 0, 1, descriptors, 0, nullptr);
+	if (descriptorSet != VK_NULL_HANDLE) {
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 		queue.currentCommandBuffer.commandCount++;
 	}
 
