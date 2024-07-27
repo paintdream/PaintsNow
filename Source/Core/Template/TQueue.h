@@ -484,47 +484,45 @@ namespace PaintsNow {
 			popHead->Clear();
 		}
 
-		void Preserve() {
+#if defined(_MSC_VER) && _MSC_VER <= 1200
+		template <class D>
+		inline void Push(D& t) {
+#else
+		template <class D>
+		inline void Push(D&& t) {
+#endif
+			IN_FENCE_GUARD();
+			
 			if (pushHead->Full()) {
 				Node* p = new Node(nodeCount);
 				nodeCount = Node::StepCounter(nodeCount, Node::GetFullPackCount());
 
 				// chain new node_t at head.
 				pushHead->next = p;
+				std::atomic_thread_fence(std::memory_order_release);
 				pushHead = p;
+			} else {
+				pushHead->Push(std::forward<D>(t));
 			}
 		}
-
-#if defined(_MSC_VER) && _MSC_VER <= 1200
-		template <class D>
-		inline void Push(D& t) {
-			IN_FENCE_GUARD();
-
-			Preserve();
-			pushHead->Push(t);
-		}
-#else
-		template <class D>
-		inline void Push(D&& t) {
-			IN_FENCE_GUARD();
-
-			Preserve();
-			pushHead->Push(std::forward<D>(t));
-		}
-#endif
 
 		template <class It>
 		It Push(It from, It to) {
 			IN_FENCE_GUARD();
+			from = pushHead->Push(from, to);
 
-			while (true) {
-				It next = pushHead->Push(from, to);
-				if (from == next)
-					return next; // complete
+			while (from != to) {
+				Node* p = new Node(nodeCount);
+				nodeCount = Node::StepCounter(nodeCount, Node::GetFullPackCount());
+				from = p->Push(from, to);
 
-				from = next;
-				Preserve();
+				// chain new node_t at head.
+				pushHead->next = p;
+				std::atomic_thread_fence(std::memory_order_release);
+				pushHead = p;
 			}
+
+			return from;
 		}
 
 		template <class It>
@@ -656,7 +654,16 @@ namespace PaintsNow {
 		}
 
 		inline bool Empty() const {
-			return pushHead->Empty();
+			if (popHead->Empty()) {
+				if (popHead != pushHead) {
+					std::atomic_thread_fence(std::memory_order_acquire);
+					return pushHead->Empty();
+				} else {
+					return true;
+				}
+			} else {
+				return false;
+			}
 		}
 
 		class Iterator {
@@ -885,7 +892,7 @@ namespace PaintsNow {
 
 		inline uint32_t Count() const {
 			uint32_t counter = 0;
-			for (Node* p = popHead; p != nullptr; p = p->next) {
+			for (Node* p = popHead; p != pushHead->next; p = p->next) {
 				counter += p->Count();
 			}
 
